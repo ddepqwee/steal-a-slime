@@ -305,6 +305,16 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "Hatch" then
+			self.S.RewardService:Hatch(player, arg)
+		elseif action == "Redeem" then
+			self.S.RewardService:Redeem(player, arg)
+		elseif action == "ToggleBuddy" then
+			local d = self.S.DataService:Get(player)
+			if d then
+				d.Buddy = not d.Buddy
+				self.S.BuddyService:Refresh(player)
+			end
 		elseif action == "BuyTrap" then
 			self:BuyTrap(player)
 		elseif action == "BuyPerk" then

@@ -48,6 +48,90 @@ function RewardService:_grant(player: Player, prize): string
 	return ""
 end
 
+-- Положить слайма на базу (без событийной статистики)
+function RewardService:_giveSlime(player: Player, entry): boolean
+	local Plot = self.S.PlotService
+	if not Plot:FreeSlot(player) then
+		return false
+	end
+	local slot = Plot:AddPet(player, entry)
+	if slot then
+		Plot:RenderSlot(player, slot)
+		return true
+	end
+	return false
+end
+
+-- ===== 🥚 Яйца =====
+function RewardService:Hatch(player: Player, eggId: any)
+	local egg
+	for _, e in Config.Eggs do
+		if e.Id == eggId then
+			egg = e
+		end
+	end
+	if not egg then
+		return
+	end
+	if not self.S.PlotService:FreeSlot(player) then
+		self.S.SocialService:Notify(player, "Base is full! Free a slot before hatching 🥚", Color3.fromRGB(255, 120, 120))
+		return
+	end
+	if not self.S.EconomyService:TrySpend(player, egg.Price) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(egg.Price), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	local entry, def = self.S.SpawnService:RollEgg(egg.MinRarity, egg.MaxRarity)
+	if not self:_giveSlime(player, entry) then
+		self.S.EconomyService:AddCash(player, egg.Price)
+		return
+	end
+	self.S.DataService:Stat(player, "Hatched")
+	RewardRemote:FireClient(player, "Hatch", { Id = entry.Id, V = entry.V, Egg = egg.Id })
+	if def.Rarity >= 6 then
+		task.delay(2.2, function()
+			self.S.SocialService:NotifyAll("🥚 " .. player.DisplayName .. " hatched a " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. " from a " .. egg.Name .. "!", Config.Rarities[def.Rarity].Color, "Legendary")
+		end)
+	end
+end
+
+-- ===== 🎟️ Промокоды =====
+function RewardService:Redeem(player: Player, raw: any)
+	local data = self.S.DataService:Get(player)
+	if not data or type(raw) ~= "string" then
+		return
+	end
+	local code = string.upper((string.gsub(string.sub(raw, 1, 30), "%s", "")))
+	local c = Config.Codes[code]
+	if not c then
+		self.S.SocialService:Notify(player, "🎟️ Invalid code", Color3.fromRGB(255, 120, 120))
+		return
+	end
+	data.Codes = data.Codes or {}
+	if data.Codes[code] then
+		self.S.SocialService:Notify(player, "🎟️ You already used this code", Color3.fromRGB(255, 200, 120))
+		return
+	end
+	local text
+	if c.Kind == "Cash" then
+		local amount = math.floor(math.max(c.Min or 500, self.S.EconomyService:GetIncome(player) * 60 * c.Minutes))
+		self.S.EconomyService:AddCash(player, amount)
+		text = "+" .. Format.money(amount)
+	elseif c.Kind == "Slime" then
+		if not self.S.PlotService:FreeSlot(player) then
+			self.S.SocialService:Notify(player, "Free a slot first, then redeem the code!", Color3.fromRGB(255, 120, 120))
+			return
+		end
+		local entry = self.S.SpawnService:RollEntry(c.MinRarity, 1.5)
+		self:_giveSlime(player, entry)
+		text = Pets.ById[entry.Id].Name .. "!"
+	else
+		text = self:_grant(player, { Kind = c.Kind })
+	end
+	data.Codes[code] = true
+	self.S.SocialService:Notify(player, "🎟️ Code " .. code .. " redeemed: " .. text, Color3.fromRGB(140, 255, 160), "Buy")
+end
+
 -- ===== Подарки за время =====
 function RewardService:GiftInfo(player: Player)
 	local s = session[player]

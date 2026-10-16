@@ -228,14 +228,55 @@ function HUD.Build()
 	local grid = Instance.new("UIGridLayout")
 	grid.CellSize = UDim2.new(0.48, 0, 0, 92)
 	grid.CellPadding = UDim2.fromOffset(8, 8)
+	grid.SortOrder = Enum.SortOrder.LayoutOrder
 	grid.Parent = list
-	local any = false
+	-- 🥚 Яйца
+	local Action0 = Net.event("Action")
+	local SHORT = { "C", "U", "R", "E", "L", "M", "S", "✨" }
+	for i, egg in Config.Eggs do
+		local total = 0
+		for r = egg.MinRarity, egg.MaxRarity do
+			total += Config.Rarities[r].Weight
+		end
+		local odds = {}
+		for r = egg.MinRarity, egg.MaxRarity do
+			local pct = Config.Rarities[r].Weight / total * 100
+			table.insert(odds, SHORT[r] .. " " .. (if pct >= 1 then string.format("%d%%", math.floor(pct + 0.5)) else string.format("%.1f%%", pct)))
+		end
+		local b = button(list, { Text = egg.Icon .. " " .. egg.Name .. "  " .. Format.money(egg.Price) .. "\n" .. table.concat(odds, " · "), LayoutOrder = i }, egg.Color, function()
+			Action0:FireServer("Hatch", egg.Id)
+		end)
+		b.TextScaled = true
+	end
+	-- 🎟️ Промокоды
+	local codeCell = Instance.new("Frame")
+	codeCell.LayoutOrder = 10
+	codeCell.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
+	corner(codeCell, 14)
+	codeCell.Parent = list
+	local box = Instance.new("TextBox")
+	box.PlaceholderText = "🎟️ Enter code"
+	box.Text = ""
+	box.ClearTextOnFocus = false
+	box.Font = FONT
+	box.TextScaled = true
+	box.TextColor3 = Color3.new(1, 1, 1)
+	box.BackgroundColor3 = Color3.fromRGB(25, 15, 45)
+	box.Position = UDim2.fromScale(0.04, 0.12)
+	box.Size = UDim2.fromScale(0.58, 0.76)
+	corner(box, 10)
+	box.Parent = codeCell
+	button(codeCell, { Text = "Redeem", Size = UDim2.fromScale(0.32, 0.76), Position = UDim2.fromScale(0.65, 0.12) }, Color3.fromRGB(90, 210, 120), function()
+		Action0:FireServer("Redeem", box.Text)
+		box.Text = ""
+	end)
+	local _any = false
 	local function shopItem(info, color, prompt)
 		if info.Id == 0 then
 			return
 		end
-		any = true
-		button(list, { Text = info.Title .. "\n" .. info.Desc .. "\n R$ " .. info.Price }, color, prompt)
+		_any = true
+		button(list, { Text = info.Title .. "\n" .. info.Desc .. "\n R$ " .. info.Price, LayoutOrder = 20 }, color, prompt)
 	end
 	for _, info in Config.GamePasses do
 		shopItem(info, Color3.fromRGB(255, 170, 40), function()
@@ -247,9 +288,7 @@ function HUD.Build()
 			MarketplaceService:PromptProductPurchase(player, info.Id)
 		end)
 	end
-	if not any then
-		text(list, { Text = "Boosts coming soon ✨", Size = UDim2.new(1, 0, 0, 40) })
-	end
+
 
 	local rebirth = panel("Rebirth", "♻️ Rebirth")
 	local rebInfo = text(rebirth, { Text = "", Size = UDim2.fromScale(0.55, 0.3), Position = UDim2.fromScale(0.04, 0.17), TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Left })
@@ -299,6 +338,9 @@ function HUD.Build()
 	pl.Parent = perkList
 
 	local basePanel = panel("Base", "🏠 Base Upgrades")
+	local buddyBtn = button(basePanel, { Text = "🐾 Buddy: ON", Size = UDim2.fromScale(0.26, 0.12), Position = UDim2.fromScale(0.58, 0.04) }, Color3.fromRGB(255, 150, 200), function()
+		Net.event("Action"):FireServer("ToggleBuddy")
+	end)
 	local gearPanel = panel("Gear", "🧰 Gear Shop")
 	local gearList = scroller(gearPanel, UDim2.new(1, 0, 0, 70))
 
@@ -391,7 +433,45 @@ function HUD.Build()
 		Action:FireServer("Spin")
 	end)
 	local spinning = false
+	local hatchFrame = Instance.new("Frame")
+	hatchFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	hatchFrame.BackgroundTransparency = 0.45
+	hatchFrame.Size = UDim2.fromScale(1, 1)
+	hatchFrame.Visible = false
+	hatchFrame.ZIndex = 50
+	hatchFrame.Parent = gui
+	local hatchIcon = text(hatchFrame, { Text = "🥚", Size = UDim2.fromScale(0.3, 0.3), Position = UDim2.fromScale(0.35, 0.25), ZIndex = 51 })
+	local hatchName = text(hatchFrame, { Text = "", Size = UDim2.fromScale(0.6, 0.1), Position = UDim2.fromScale(0.2, 0.58), ZIndex = 51 })
+	local hatchRarity = text(hatchFrame, { Text = "", Size = UDim2.fromScale(0.4, 0.06), Position = UDim2.fromScale(0.3, 0.69), ZIndex = 51 })
 	Net.event("Reward").OnClientEvent:Connect(function(kind, d)
+		if kind == "Hatch" then
+			local def = Pets.ById[d.Id]
+			local egg
+			for _, e in Config.Eggs do
+				if e.Id == d.Egg then
+					egg = e
+				end
+			end
+			hatchFrame.Visible = true
+			hatchName.Text = ""
+			hatchRarity.Text = ""
+			hatchIcon.Text = egg and egg.Icon or "🥚"
+			for k = 1, 12 do
+				hatchIcon.Rotation = (if k % 2 == 0 then 1 else -1) * (6 + k * 1.5)
+				task.wait(0.08)
+			end
+			hatchIcon.Rotation = 0
+			hatchIcon.Text = "🫧"
+			local r = Config.Rarities[def.Rarity]
+			local v = d.V and Config.Variants[d.V]
+			hatchName.Text = (if v then v.Label .. " " else "") .. def.Name
+			hatchName.TextColor3 = if v then v.Color else def.Color
+			hatchRarity.Text = r.Name
+			hatchRarity.TextColor3 = r.Color
+			task.wait(1.6)
+			hatchFrame.Visible = false
+			return
+		end
 		if kind ~= "Spin" or spinning then
 			return
 		end
@@ -639,6 +719,7 @@ function HUD.Build()
 		local lv = s.LockLevel or 0
 		lockText.Text = ("🔒 Lock Lv.%d  (%ds%s)"):format(lv + 1, durs[lv + 1] or durs[#durs], if durs[lv + 2] then " → " .. durs[lv + 2] .. "s" else "")
 		lockBtn.Text = if (s.LockCost or -1) < 0 then "MAX" else Format.money(s.LockCost)
+		buddyBtn.Text = if s.Buddy then "🐾 Buddy: ON" else "🐾 Buddy: OFF"
 		local tl = s.TrapLevel or 0
 		trapText.Text = if tl > 0 then ("🪤 Trap Lv.%d  (stun %ss)"):format(tl, tostring(Config.Trap.Stun[tl])) else "🪤 Entrance Trap (stuns thieves)"
 		trapBtn.Text = if (s.TrapCost or -1) < 0 then "MAX" else Format.money(s.TrapCost)

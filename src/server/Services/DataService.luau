@@ -41,6 +41,8 @@ local function template()
 		Perks = {},
 		Stats = {},
 		Ach = {},
+		Codes = {},
+		Buddy = true,
 		CashPotionUntil = 0,
 		Quests = nil,
 	}

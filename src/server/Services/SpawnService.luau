@@ -50,6 +50,43 @@ function SpawnService:RollRarity(luck: number, minRarity: number?): number
 	return 1
 end
 
+-- Редкость в диапазоне [minR, maxR] (для яиц)
+function SpawnService:RollRarityRange(luck: number, minR: number, maxR: number): number
+	local total = 0
+	local weights = {}
+	for i, r in Config.Rarities do
+		local w = 0
+		if i >= minR and i <= maxR then
+			w = r.Weight * (if i >= 3 then luck else 1)
+		end
+		weights[i] = w
+		total += w
+	end
+	local roll = rng:NextNumber(0, total)
+	for i, w in weights do
+		roll -= w
+		if roll <= 0 and w > 0 then
+			return i
+		end
+	end
+	return minR
+end
+
+function SpawnService:RollEgg(minR: number, maxR: number)
+	local luck = self.S.EventService:GetLuck()
+	local rarity = self:RollRarityRange(luck, minR, maxR)
+	local season = self.S.EventService:Season()
+	local seasonName = season and season.Name or nil
+	local eventChance = if season then season.EventPetChance else 0
+	local pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
+	while #pool == 0 and rarity > 1 do
+		rarity -= 1
+		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
+	end
+	local def = pool[rng:NextInteger(1, #pool)]
+	return { Id = def.Id, V = self:RollVariant(luck, seasonName) }, def
+end
+
 function SpawnService:RollVariant(luck: number, seasonName: string?): string?
 	local r = rng:NextNumber()
 	local acc = 0

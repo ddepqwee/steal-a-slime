@@ -150,6 +150,26 @@ Config.Quests = {
 Config.QuestRewardMinutes = 8 -- награда = доход за N минут
 Config.QuestRewardMin = 1_000
 
+-- 🥚 Яйца: вылупляется случайный слайм из диапазона редкостей (веса как на дороге)
+Config.Eggs = {
+	{ Id = "Meadow", Name = "Meadow Egg", Icon = "🥚", Price = 1_000, MinRarity = 1, MaxRarity = 3, Color = Color3.fromRGB(150, 230, 130) },
+	{ Id = "Bubble", Name = "Bubble Egg", Icon = "🫧", Price = 100_000, MinRarity = 2, MaxRarity = 5, Color = Color3.fromRGB(110, 190, 255) },
+	{ Id = "Royal", Name = "Royal Egg", Icon = "👑", Price = 10_000_000, MinRarity = 3, MaxRarity = 6, Color = Color3.fromRGB(255, 200, 60) },
+	{ Id = "Cosmic", Name = "Cosmic Egg", Icon = "🌌", Price = 1_000_000_000, MinRarity = 4, MaxRarity = 8, Color = Color3.fromRGB(150, 90, 255) },
+}
+
+-- 🎟️ Промокоды (регистр не важен). Kind: Cash (минуты дохода) / Slime (MinRarity) / Luck
+Config.Codes = {
+	SLIME = { Kind = "Cash", Minutes = 10, Min = 2_000 },
+	RELEASE = { Kind = "Slime", MinRarity = 3 },
+	SPOOKY = { Kind = "Slime", MinRarity = 4 },
+	LUCKY = { Kind = "Luck" },
+}
+
+-- 👑 King of the Hill и ✨ Golden Hunt
+Config.Hill = { Duration = 60, Radius = 14, IncomeSeconds = 2, Min = 25, SoloMult = 2 }
+Config.Hunt = { Count = 12, Duration = 90, IncomeSeconds = 15, Min = 200 }
+
 -- 🪤 Ловушка у входа базы: оглушает чужих игроков
 Config.Trap = { Stun = { 2, 3, 4.5 }, Costs = { 20_000, 400_000, 8_000_000 }, Cooldown = 6 }
 

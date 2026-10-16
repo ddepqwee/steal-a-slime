@@ -470,16 +470,136 @@ function WorldEventService:Boss()
 	end
 end
 
+-- 👑 KING OF THE HILL: стой в круге — получай деньги. Один в круге = x2.
+function WorldEventService:Hill()
+	local cfg = Config.Hill
+	local pos = Vector3.new(rng:NextNumber(-120, 120), 0, (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(115, 145))
+	local ring = anchoredPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, cfg.Radius * 2, cfg.Radius * 2), CFrame = CFrame.new(pos + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 200, 40), Material = Enum.Material.Neon, Transparency = 0.35 })
+	local beam = anchoredPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(200, 2, 2), CFrame = CFrame.new(pos + Vector3.new(0, 100, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 220, 80), Material = Enum.Material.Neon, Transparency = 0.6 })
+	local label = billboard(ring, "👑 KING OF THE HILL", Color3.fromRGB(255, 220, 80), UDim2.fromOffset(300, 60), Vector3.new(0, 9, 0), true)
+	self.S.SocialService:NotifyAll("👑 KING OF THE HILL! Stand in the golden circle to earn cash — alone = x2! Bonk others out!", Color3.fromRGB(255, 220, 80), "Legendary")
+	local time = {} :: { [Player]: number }
+	local t0 = os.clock()
+	while os.clock() - t0 < cfg.Duration do
+		task.wait(1)
+		local inside = {}
+		for _, p in Players:GetPlayers() do
+			local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+			if r and ((r.Position - pos) * Vector3.new(1, 0, 1)).Magnitude <= cfg.Radius and r.Position.Y < 20 then
+				table.insert(inside, p)
+			end
+		end
+		local mult = if #inside == 1 then cfg.SoloMult else 1
+		for _, p in inside do
+			time[p] = (time[p] or 0) + 1
+			local cash = math.floor(math.max(cfg.Min, self.S.EconomyService:GetIncome(p) * cfg.IncomeSeconds) * mult)
+			self.S.EconomyService:AddCash(p, cash)
+		end
+		local left = math.ceil(cfg.Duration - (os.clock() - t0))
+		if #inside == 1 then
+			label.Text = "👑 " .. inside[1].DisplayName .. " is KING! (" .. left .. "s)"
+		elseif #inside > 1 then
+			label.Text = "⚔️ " .. #inside .. " fighting for the hill! (" .. left .. "s)"
+		else
+			label.Text = "👑 KING OF THE HILL (" .. left .. "s)"
+		end
+	end
+	local best, bestT = nil, 0
+	for p, t in time do
+		if p.Parent and t > bestT then
+			best, bestT = p, t
+		end
+	end
+	ring:Destroy()
+	beam:Destroy()
+	if best then
+		self.S.SocialService:NotifyAll("👑 " .. best.DisplayName .. " ruled the hill for " .. bestT .. "s!", Color3.fromRGB(255, 220, 80))
+		local entry = self.S.SpawnService:RollEntry(4, 1.5)
+		if self:_grant(best, entry) then
+			local def = Pets.ById[entry.Id]
+			self.S.SocialService:Notify(best, "👑 Hill reward: " .. def.Name .. "!", Config.Rarities[def.Rarity].Color)
+		end
+	else
+		self.S.SocialService:NotifyAll("👑 Nobody claimed the hill this time...", Color3.fromRGB(200, 200, 200))
+	end
+end
+
+-- ✨ GOLDEN HUNT: по карте разбросаны маленькие золотые слаймы
+function WorldEventService:Hunt()
+	local cfg = Config.Hunt
+	self.S.SocialService:NotifyAll("✨ GOLDEN HUNT! " .. cfg.Count .. " golden slimes are hidden around the map — find them!", Color3.fromRGB(255, 215, 60), "Legendary")
+	local left = cfg.Count
+	local found = {} :: { [Player]: number }
+	local models = {}
+	for _ = 1, cfg.Count do
+		local spot = Vector3.new(rng:NextNumber(-230, 230), 0, rng:NextNumber(-170, 170))
+		local entry = { Id = "Blobby", V = "Gold" }
+		local model = self.S.PetFactory:Build(entry, { Scale = 0.8 })
+		local info = model.PrimaryPart:FindFirstChild("Info")
+		if info then
+			info:Destroy()
+		end
+		model:PivotTo(CFrame.new(spot + Vector3.new(0, 1.5, 0)))
+		model.Parent = folder
+		billboard(model.PrimaryPart, "✨", Color3.fromRGB(255, 230, 80), UDim2.fromOffset(30, 30), Vector3.new(0, 3, 0), true)
+		table.insert(models, model)
+		local taken = false
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.ActionText = "Grab"
+		prompt.ObjectText = "Golden Slime"
+		prompt.HoldDuration = 0
+		prompt.MaxActivationDistance = 10
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = model.PrimaryPart
+		prompt.Triggered:Connect(function(player)
+			if taken then
+				return
+			end
+			taken = true
+			left -= 1
+			found[player] = (found[player] or 0) + 1
+			local cash = math.floor(math.max(cfg.Min, self.S.EconomyService:GetIncome(player) * cfg.IncomeSeconds))
+			self.S.EconomyService:AddCash(player, cash)
+			burst(model:GetPivot().Position, ColorSequence.new(Color3.fromRGB(255, 220, 60)), 30)
+			model:Destroy()
+			self.S.SocialService:Notify(player, "✨ Golden slime! +" .. Format.money(cash) .. " (" .. left .. " left)", Color3.fromRGB(255, 220, 80), "Buy")
+		end)
+	end
+	local t0 = os.clock()
+	while left > 0 and os.clock() - t0 < cfg.Duration do
+		task.wait(0.5)
+	end
+	for _, m in models do
+		if m.Parent then
+			m:Destroy()
+		end
+	end
+	local best, bestN = nil, 0
+	for p, n in found do
+		if p.Parent and n > bestN then
+			best, bestN = p, n
+		end
+	end
+	if best then
+		self.S.SocialService:NotifyAll("✨ " .. best.DisplayName .. " found the most golden slimes (" .. bestN .. ")!", Color3.fromRGB(255, 220, 80))
+		self.S.QuestService:Add(best, "Event", 1)
+	end
+end
+
 function WorldEventService:RunRandom()
 	local roll = rng:NextNumber()
-	if roll < 0.3 then
+	if roll < 0.22 then
 		self:Meteor()
-	elseif roll < 0.55 then
+	elseif roll < 0.42 then
 		self:Rain()
-	elseif roll < 0.8 then
+	elseif roll < 0.6 then
 		self:Raid()
-	else
+	elseif roll < 0.74 then
 		self:Boss()
+	elseif roll < 0.87 then
+		self:Hill()
+	else
+		self:Hunt()
 	end
 end
 

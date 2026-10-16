@@ -154,6 +154,7 @@ function EconomyService:SendState(player: Player)
 		SlotCost = P:SlotCost(data) or -1,
 		LockLevel = data.LockLevel or 0,
 		TrapLevel = data.TrapLevel or 0,
+		Buddy = data.Buddy ~= false,
 		TrapCost = P:TrapCost(data) or -1,
 		LockCost = P:LockUpgradeCost(data) or -1,
 		Fusable = self:_fusable(data),
