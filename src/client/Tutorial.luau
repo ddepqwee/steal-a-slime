@@ -123,7 +123,7 @@ function Tutorial.Start(HUD)
 	sc.CornerRadius = UDim.new(0, 10)
 	sc.Parent = skip
 	skip.Parent = card
-	card.Parent = HUD.Gui
+	card.Parent = HUD.Root or HUD.Gui
 	skip.MouseButton1Click:Connect(function()
 		Action:FireServer("TutSkip")
 	end)

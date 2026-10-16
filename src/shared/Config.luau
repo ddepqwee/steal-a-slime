@@ -109,6 +109,10 @@ Config.Products = {
 	ServerLuck = { Id = 3719002720, Title = "Server Luck x2", Desc = "15 min of luck for the whole server", Kind = "ServerLuck", Minutes = 15, Price = 99 },
 }
 
+-- 🌙 День/ночь (синхронно на всех серверах): Day сек дня, Night сек ночи.
+-- Ночью: шанс MoonChance, что слайм на дороге будет ночным (Moon slime), и удача x LuckMult.
+Config.DayNight = { Day = 900, Night = 300, LuckMult = 1.5, MoonChance = 0.35 }
+
 -- Расписание авто-ивентов (UTC). Работают сами, без апдейтов.
 Config.Schedule = {
 	{ Name = "LUCKY RAIN x2", EveryHours = 1, StartMinute = 0, Duration = 10, Luck = 2 },

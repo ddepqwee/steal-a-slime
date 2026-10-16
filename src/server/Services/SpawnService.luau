@@ -109,8 +109,8 @@ function SpawnService:RollVariant(luck: number, seasonName: string?): string?
 	return nil
 end
 
-function SpawnService:RollEntry(minRarity: number?, luckMult: number?, zone: any?)
-	local luck = self.S.EventService:GetLuck() * (luckMult or 1)
+function SpawnService:RollEntry(minRarity: number?, luckMult: number?, zone: any?, fromRoad: boolean?)
+	local luck = self.S.EventService:GetLuck() * (luckMult or 1) * self.S.DayNightService:LuckMult()
 	local zoneId = zone and zone.Id or nil
 	local zoneChance = zone and zone.ZoneChance or 0
 	local rarity = self:RollRarity(luck, minRarity)
@@ -121,6 +121,11 @@ function SpawnService:RollEntry(minRarity: number?, luckMult: number?, zone: any
 	while #pool == 0 and rarity > 1 do
 		rarity -= 1
 		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber(), zoneId, zoneChance, rng:NextNumber())
+	end
+	-- 🌙 ночью часть слаймов — ночные
+	local moon = Pets.NightByRarity[rarity]
+	if fromRoad and moon and self.S.DayNightService:IsNight() and rng:NextNumber() < Config.DayNight.MoonChance then
+		pool = moon
 	end
 	local def = pool[rng:NextInteger(1, #pool)]
 	local variant = self:RollVariant(luck, seasonName)
@@ -134,7 +139,7 @@ function SpawnService:Spawn(minRarity: number?, forced: any?, road: any?)
 		entry, def = forced, Pets.ById[forced.Id]
 	else
 		local zone = road.Zone
-		entry, def = self:RollEntry(zone and math.max(minRarity or 1, zone.MinRarity) or minRarity, zone and zone.Luck or nil, zone)
+		entry, def = self:RollEntry(zone and math.max(minRarity or 1, zone.MinRarity) or minRarity, zone and zone.Luck or nil, zone, true)
 	end
 	local price = self.S.EconomyService:PetValue(entry)
 	local model = self.S.PetFactory:Build(entry, { Price = price, Scale = 1.6 })

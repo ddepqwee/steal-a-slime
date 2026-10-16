@@ -94,22 +94,37 @@ Pets.List = {
 	{ Id = "GhostlyGoo", Name = "Ghostly Goo", Rarity = 4, Price = 200_000, Income = 1_600, Color = Color3.fromRGB(235, 240, 255), Size = 3.9, Event = "Halloween", Ghost = true },
 	{ Id = "PumpkinPete", Name = "Pumpkin Pete", Rarity = 5, Price = 4_000_000, Income = 20_000, Color = Color3.fromRGB(255, 120, 20), Size = 4.5, Event = "Halloween", Pumpkin = true },
 	{ Id = "WitchyWobble", Name = "Witchy Wobble", Rarity = 6, Price = 40_000_000, Income = 130_000, Color = Color3.fromRGB(120, 40, 180), Size = 5.0, Event = "Halloween", WitchHat = true, Sparkle = true },
+	-- 🌙 Moon slimes (Night = true: появляются только ночью)
+	{ Id = "Moonpup", Name = "Moonpup", Rarity = 2, Price = 2_000, Income = 40, Color = Color3.fromRGB(190, 200, 255), Size = 3.0, Night = true, Antenna = true },
+	{ Id = "Starglow", Name = "Starglow", Rarity = 3, Price = 25_000, Income = 330, Color = Color3.fromRGB(255, 240, 140), Size = 3.4, Night = true, Neon = true, Sparkle = true },
+	{ Id = "Nightshade", Name = "Nightshade", Rarity = 4, Price = 400_000, Income = 3_000, Color = Color3.fromRGB(90, 40, 160), Size = 3.9, Night = true, Wings = true, Shades = true },
+	{ Id = "LunarJelly", Name = "Lunar Jelly", Rarity = 5, Price = 9_000_000, Income = 48_000, Color = Color3.fromRGB(200, 220, 255), Size = 4.6, Night = true, Glass = true, Halo = true, Sparkle = true },
+	{ Id = "Eclipse", Name = "Eclipse", Rarity = 6, Price = 90_000_000, Income = 300_000, Color = Color3.fromRGB(35, 20, 60), Size = 5.2, Night = true, Halo = true, Neon = true, Sparkle = true },
+	{ Id = "MoonQueen", Name = "Moon Queen", Rarity = 7, Price = 1_800_000_000, Income = 4_500_000, Color = Color3.fromRGB(225, 230, 255), Size = 6.1, Night = true, Crown = true, Wings = true, Glass = true, Sparkle = true },
+
 	{ Id = "Headless", Name = "The Headless Blob", Rarity = 7, Price = 600_000_000, Income = 1_600_000, Color = Color3.fromRGB(30, 10, 40), Size = 5.6, Event = "Halloween", Neon = false, Pumpkin = true, Sparkle = true, Glitch = true },
 }
 
 Pets.ById = {}
 Pets.ByRarity = {}
+Pets.NightByRarity = {}
 for _, p in Pets.List do
 	Pets.ById[p.Id] = p
 	Pets.ByRarity[p.Rarity] = Pets.ByRarity[p.Rarity] or {}
 	table.insert(Pets.ByRarity[p.Rarity], p)
+	if p.Night then
+		Pets.NightByRarity[p.Rarity] = Pets.NightByRarity[p.Rarity] or {}
+		table.insert(Pets.NightByRarity[p.Rarity], p)
+	end
 end
 
 -- Пул слаймов редкости: обычные + (если ивент идёт) ивентовые с отдельным шансом
 function Pets.Pool(rarity: number, activeEvent: string?, eventChance: number, roll: number, zone: string?, zoneChance: number?, zoneRoll: number?)
 	local normal, event, zonal = {}, {}, {}
 	for _, p in Pets.ByRarity[rarity] or {} do
-		if p.Zone ~= nil then
+		if p.Night then
+			continue -- ночные слаймы выбираются отдельно (SpawnService)
+		elseif p.Zone ~= nil then
 			if p.Zone == zone then
 				table.insert(zonal, p)
 			end
