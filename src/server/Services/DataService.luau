@@ -36,6 +36,11 @@ local function template()
 		ExtraSlots = 0,
 		LockLevel = 0,
 		LastSpin = 0,
+		TrapLevel = 0,
+		Tokens = 0,
+		Perks = {},
+		Stats = {},
+		Ach = {},
 		CashPotionUntil = 0,
 		Quests = nil,
 	}
@@ -70,6 +75,19 @@ function DataService:OnLoaded(cb)
 	table.insert(loadedCallbacks, cb)
 	for player, data in self.Profiles do
 		task.spawn(cb, player, data)
+	end
+end
+
+-- Счётчики для достижений
+function DataService:Stat(player: Player, key: string, n: number?)
+	local data = self.Profiles[player]
+	if not data then
+		return
+	end
+	data.Stats = data.Stats or {}
+	data.Stats[key] = (data.Stats[key] or 0) + (n or 1)
+	if self.S.AchievementService then
+		self.S.AchievementService:Check(player)
 	end
 end
 

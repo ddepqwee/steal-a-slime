@@ -91,6 +91,7 @@ function WorldEventService:_grant(player: Player, entry): boolean
 	end
 	Plot:RenderSlot(player, slot)
 	self.S.QuestService:Add(player, "Event", 1)
+	self.S.DataService:Stat(player, "EventClaims")
 	return true
 end
 
@@ -230,6 +231,7 @@ function WorldEventService:BanditBonked(player: Player, npc: Model)
 	local reward = math.floor(math.max(cfg.RewardMin, self.S.EconomyService:GetIncome(player) * cfg.RewardSeconds))
 	self.S.EconomyService:AddCash(player, reward)
 	self.S.QuestService:Add(player, "Bonk", 1)
+	self.S.DataService:Stat(player, "Bonks")
 	if rng:NextNumber() < cfg.SlimeChance then
 		local entry = self.S.SpawnService:RollEntry(2, 1.5)
 		if self:_grant(player, entry) then
@@ -457,6 +459,7 @@ function WorldEventService:Boss()
 		if best then
 			local prize = self.S.SpawnService:RollEntry(5, 2)
 			local def = Pets.ById[prize.Id]
+			self.S.DataService:Stat(best, "BossMVP")
 			if self:_grant(best, prize) then
 				self.S.SocialService:NotifyAll("👑 " .. best.DisplayName .. " was the MVP and won a " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. "!", Config.Rarities[def.Rarity].Color, "Legendary")
 			end

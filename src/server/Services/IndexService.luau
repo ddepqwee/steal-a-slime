@@ -44,6 +44,7 @@ function IndexService:Discover(player: Player, id: string)
 	end
 	local before = self:Bonus(data)
 	data.Index[id] = true
+	self.S.AchievementService:Check(player)
 	local def = Pets.ById[id]
 	self.S.SocialService:Notify(player, ("📖 New slime discovered: %s! (%d/%d)"):format(def.Name, self:Count(data), #Pets.List), Color3.fromRGB(180, 220, 255))
 	if self:Bonus(data) > before then
@@ -73,6 +74,9 @@ function IndexService:SendMeta(player: Player)
 		Quests = data.Quests and data.Quests.List or {},
 		QuestRewards = self.S.QuestService:Rewards(player),
 		Gear = gear,
+		Tokens = data.Tokens or 0,
+		Perks = data.Perks or {},
+		Ach = self.S.AchievementService:List(player),
 	})
 end
 

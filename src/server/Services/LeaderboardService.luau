@@ -28,10 +28,25 @@ function LeaderboardService:Start()
 	if not ok then
 		return
 	end
+	local okS, stealsStore = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, Config.StealsBoardStore)
 	while true do
 		for player, data in self.S.DataService.Profiles do
 			local value = math.clamp(math.floor(data.TotalEarned), 0, 2 ^ 52)
 			pcall(store.SetAsync, store, "u_" .. player.UserId, value)
+			if okS then
+				pcall(stealsStore.SetAsync, stealsStore, "u_" .. player.UserId, data.Steals or 0)
+			end
+		end
+		if okS then
+			local okP, sp = pcall(stealsStore.GetSortedAsync, stealsStore, false, 10)
+			if okP then
+				local lines = { "🦹 TOP THIEVES" }
+				for i, item in sp:GetCurrentPage() do
+					local uid = tonumber(string.sub(item.key, 3))
+					table.insert(lines, ("%d. %s — %d steals"):format(i, uid and nameOf(uid) or "?", item.value))
+				end
+				self.S.MapBuilder.StealsLabel.Text = table.concat(lines, "\n")
+			end
 		end
 		local okPage, pages = pcall(store.GetSortedAsync, store, false, 10)
 		if okPage then

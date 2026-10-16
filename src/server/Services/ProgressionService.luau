@@ -38,8 +38,12 @@ function ProgressionService:ApplySpeed(player: Player)
 		speed += Config.Speed.VipBonus
 	end
 	speed += tonumber(player:GetAttribute("GearSpeed")) or 0
+	speed += (data.Perks and data.Perks.Speed) or 0
 	if player:GetAttribute("Carrying") then
 		speed *= Config.CarrySpeedMult
+	end
+	if player:GetAttribute("Stunned") then
+		speed = 0
 	end
 	hum.WalkSpeed = speed
 end
@@ -117,6 +121,7 @@ function ProgressionService:Mutate(player: Player, slot: string)
 		end
 	end
 	entry.V = result
+	self.S.DataService:Stat(player, "Mutations")
 	self.S.EconomyService:Refresh(player)
 	self.S.PlotService:RenderSlot(player, slot)
 	local v = Config.Variants[result]
@@ -158,6 +163,7 @@ function ProgressionService:Fuse(player: Player, petId: any)
 		self.S.PlotService:RemovePet(player, slots[i])
 	end
 	data.Pets[slots[1]] = { Id = petId, V = bestV, L = bestL, M = true }
+	self.S.DataService:Stat(player, "Fused")
 	self.S.EconomyService:Refresh(player)
 	self.S.PlotService:RenderSlot(player, slots[1])
 	self.S.SocialService:NotifyAll("⚗️ " .. player.DisplayName .. " fused a MEGA " .. Pets.ById[petId].Name .. "!", Color3.fromRGB(255, 220, 80), "Legendary")
@@ -184,6 +190,56 @@ function ProgressionService:BuyLockUpgrade(player: Player)
 	self.S.SocialService:Notify(player, "🔒 Lock upgraded! Now lasts " .. Config.LockUpgrade.Durations[data.LockLevel + 1] .. "s", Color3.fromRGB(255, 160, 180), "Buy")
 end
 
+function ProgressionService:TrapCost(data): number?
+	return Config.Trap.Costs[(data.TrapLevel or 0) + 1]
+end
+
+function ProgressionService:BuyTrap(player: Player)
+	local data = self.S.DataService:Get(player)
+	if not data then
+		return
+	end
+	local cost = self:TrapCost(data)
+	if not cost then
+		return
+	end
+	if not self.S.EconomyService:TrySpend(player, cost) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	data.TrapLevel = (data.TrapLevel or 0) + 1
+	self.S.PlotService:RefreshTrap(player)
+	self.S.SocialService:Notify(player, "🪤 Trap Lv." .. data.TrapLevel .. "! Thieves get stunned for " .. Config.Trap.Stun[data.TrapLevel] .. "s", Color3.fromRGB(200, 120, 255), "Buy")
+end
+
+function ProgressionService:BuyPerk(player: Player, id: any)
+	local data = self.S.DataService:Get(player)
+	local perk
+	for _, p in Config.Perks do
+		if p.Id == id then
+			perk = p
+		end
+	end
+	if not data or not perk then
+		return
+	end
+	data.Perks = data.Perks or {}
+	local lvl = data.Perks[perk.Id] or 0
+	if lvl >= perk.Max then
+		return
+	end
+	if (data.Tokens or 0) < perk.Cost then
+		self.S.SocialService:Notify(player, "🔮 You need " .. perk.Cost .. " Rebirth Token(s)", Color3.fromRGB(200, 160, 255))
+		return
+	end
+	data.Tokens -= perk.Cost
+	data.Perks[perk.Id] = lvl + 1
+	self:ApplySpeed(player)
+	self.S.EconomyService:Refresh(player)
+	self.S.IndexService:SendMeta(player)
+	self.S.SocialService:Notify(player, "🔮 " .. perk.Name .. " Lv." .. (lvl + 1) .. "!", Color3.fromRGB(200, 160, 255), "Buy")
+end
+
 function ProgressionService:UpgradePet(player: Player, slot: string)
 	local data = self.S.DataService:Get(player)
 	local entry = data and data.Pets[slot]
@@ -202,6 +258,7 @@ function ProgressionService:UpgradePet(player: Player, slot: string)
 	self.S.EconomyService:Refresh(player)
 	self.S.PlotService:RenderSlot(player, slot)
 	self.S.QuestService:Add(player, "Upgrade", 1)
+	self.S.DataService:Stat(player, "Upgrades")
 	self.S.SocialService:Notify(player, "⬆️ Upgraded to Lv." .. entry.L .. "! Income x" .. Config.Upgrade.IncomeMult, Color3.fromRGB(140, 255, 160), "Buy")
 end
 
@@ -218,13 +275,18 @@ function ProgressionService:Rebirth(player: Player)
 	self.S.StealService:CancelForVictim(player)
 	self.S.PlotService:ClearAll(player)
 	data.Rebirths += 1
-	data.Cash = Config.StartCash * (data.Rebirths + 1)
+	data.Tokens = (data.Tokens or 0) + 1
+	local startLvl = (data.Perks and data.Perks.Start) or 0
+	data.Cash = Config.StartCash * (data.Rebirths + 1) * 3 ^ startLvl
 	data.Pets = {}
 	data.SpeedLevel = 0
 	self:ApplySpeed(player)
 	self.S.EconomyService:Refresh(player)
 	self.S.EconomyService:AddCash(player, 0)
 	self.S.SocialService:NotifyAll("♻️ " .. player.DisplayName .. " rebirthed! (#" .. data.Rebirths .. ")", Color3.fromRGB(200, 140, 255))
+	self.S.SocialService:Notify(player, "🔮 +1 Rebirth Token! Spend it on permanent perks in ♻️ Rebirth", Color3.fromRGB(200, 160, 255))
+	self.S.AchievementService:Check(player)
+	self.S.IndexService:SendMeta(player)
 	self.S.DataService:Save(player, false)
 end
 
@@ -243,6 +305,10 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "BuyTrap" then
+			self:BuyTrap(player)
+		elseif action == "BuyPerk" then
+			self:BuyPerk(player, arg)
 		elseif action == "ClaimGift" then
 			self.S.RewardService:ClaimGift(player)
 		elseif action == "Spin" then

@@ -296,7 +296,10 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 	local lockPad = part({ Name = "LockPad", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 5, 5), CFrame = padCF * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 60, 90), Material = Enum.Material.Neon })
 	local lockLabel = label(lockPad, "🔒 LOCK", UDim2.fromScale(7, 2.4), Vector3.new(0, 3.5, 0))
 
+	local trapPad = part({ Name = "TrapPad", Parent = model, Size = Vector3.new(ENTRANCE_W - 1, 0.2, 5), CFrame = at(0, 1.1, -half + 3.5), Color = Color3.fromRGB(170, 70, 255), Material = Enum.Material.Neon, Transparency = 1, CanCollide = false, CanTouch = false })
+
 	local plot = {
+		TrapPad = trapPad,
 		Index = index,
 		CFrame = cf,
 		Model = model,
@@ -357,6 +360,13 @@ function MapBuilder:_board()
 	list.Text = "🏆 TOP EARNERS\n..."
 	list.Parent = gui
 	self.BoardLabel = list
+
+	local board2 = part({ Name = "StealsBoard", Size = Vector3.new(1, 22, 30), Position = Vector3.new(self.RoadEnd.X + 26, 13, 36), Color = Color3.fromRGB(70, 30, 40) })
+	part({ Name = "BoardFrame", Size = Vector3.new(1.2, 23, 31), Position = board2.Position + Vector3.new(0.2, 0, 0), Color = Color3.fromRGB(255, 110, 70), Material = Enum.Material.Neon })
+	local gui2 = gui:Clone()
+	gui2.Parent = board2
+	self.StealsLabel = gui2:FindFirstChild("List")
+	self.StealsLabel.Text = "🦹 TOP THIEVES\n..."
 end
 
 -- 🎃 Хэллоуин: закатный свет, тыквы, оранжевые фонари, летучие мыши

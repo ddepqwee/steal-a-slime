@@ -118,6 +118,7 @@ function StealService:_finish(thief: Player, success: boolean)
 			tData.Steals += 1
 		end
 		self.S.QuestService:Add(thief, "Steal", 1)
+		self.S.AchievementService:Check(thief)
 		local def = Pets.ById[c.entry.Id]
 		self.S.SocialService:NotifyAll("🦹 " .. thief.DisplayName .. " stole " .. def.Name .. " from " .. c.victim.DisplayName .. "!", Color3.fromRGB(255, 160, 60))
 	else
@@ -224,6 +225,7 @@ function StealService:Bonk(player: Player, mega: boolean?)
 					if carries[other] then
 						self:Drop(other, player)
 						self.S.QuestService:Add(player, "Bonk", 1)
+						self.S.DataService:Stat(player, "Bonks")
 					end
 					oHum.Sit = true
 					if mega then

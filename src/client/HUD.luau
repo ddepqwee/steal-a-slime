@@ -252,9 +252,9 @@ function HUD.Build()
 	end
 
 	local rebirth = panel("Rebirth", "♻️ Rebirth")
-	local rebInfo = text(rebirth, { Text = "", Size = UDim2.fromScale(0.9, 0.42), Position = UDim2.fromScale(0.05, 0.2), TextColor3 = Color3.new(1, 1, 1) })
+	local rebInfo = text(rebirth, { Text = "", Size = UDim2.fromScale(0.55, 0.3), Position = UDim2.fromScale(0.04, 0.17), TextColor3 = Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Left })
 	local Action = Net.event("Action")
-	button(rebirth, { Text = "Rebirth!", Size = UDim2.fromScale(0.6, 0.18), Position = UDim2.fromScale(0.2, 0.72) }, Color3.fromRGB(170, 90, 255), function()
+	button(rebirth, { Text = "Rebirth!", Size = UDim2.fromScale(0.34, 0.14), Position = UDim2.fromScale(0.62, 0.22) }, Color3.fromRGB(170, 90, 255), function()
 		Action:FireServer("Rebirth")
 		rebirth.Visible = false
 	end)
@@ -284,10 +284,24 @@ function HUD.Build()
 		end
 	end
 
+	local tokensText = text(rebirth, { Text = "🔮 Tokens: 0", Size = UDim2.fromScale(0.5, 0.07), Position = UDim2.fromScale(0.04, 0.5), TextColor3 = Color3.fromRGB(210, 170, 255), TextXAlignment = Enum.TextXAlignment.Left })
+	local perkList = Instance.new("ScrollingFrame")
+	perkList.BackgroundTransparency = 1
+	perkList.Position = UDim2.fromScale(0.04, 0.59)
+	perkList.Size = UDim2.fromScale(0.92, 0.38)
+	perkList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	perkList.CanvasSize = UDim2.new()
+	perkList.ScrollBarThickness = 6
+	perkList.Parent = rebirth
+	local pl = Instance.new("UIGridLayout")
+	pl.CellSize = UDim2.new(0.49, 0, 0, 52)
+	pl.CellPadding = UDim2.fromOffset(6, 6)
+	pl.Parent = perkList
+
+	local basePanel = panel("Base", "🏠 Base Upgrades")
 	local gearPanel = panel("Gear", "🧰 Gear Shop")
 	local gearList = scroller(gearPanel, UDim2.new(1, 0, 0, 70))
-	gearList.Position = UDim2.fromScale(0.04, 0.52)
-	gearList.Size = UDim2.fromScale(0.92, 0.45)
+
 	-- строка покупки слотов
 	local slotRow = Instance.new("Frame")
 	slotRow.BackgroundColor3 = Color3.fromRGB(60, 40, 100)
@@ -295,10 +309,19 @@ function HUD.Build()
 	slotRow.Size = UDim2.fromScale(0.92, 0.14)
 	corner(slotRow, 14)
 	stroke(slotRow, Color3.fromRGB(140, 255, 200), 2)
-	slotRow.Parent = gearPanel
+	slotRow.Position = UDim2.fromScale(0.04, 0.22)
+	slotRow.Size = UDim2.fromScale(0.92, 0.2)
+	slotRow.Parent = basePanel
 	local lockRow = slotRow:Clone()
-	lockRow.Position = UDim2.fromScale(0.04, 0.35)
-	lockRow.Parent = gearPanel
+	lockRow.Position = UDim2.fromScale(0.04, 0.46)
+	lockRow.Parent = basePanel
+	local trapRow = slotRow:Clone()
+	trapRow.Position = UDim2.fromScale(0.04, 0.7)
+	trapRow.Parent = basePanel
+	local trapText = text(trapRow, { Text = "🪤 Entrance Trap", Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.03, 0.1), TextXAlignment = Enum.TextXAlignment.Left })
+	local trapBtn = button(trapRow, { Text = "...", Size = UDim2.fromScale(0.3, 0.8), Position = UDim2.fromScale(0.67, 0.1) }, Color3.fromRGB(170, 80, 255), function()
+		Action:FireServer("BuyTrap")
+	end)
 	local lockText = text(lockRow, { Text = "🔒 Lock Upgrade", Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.03, 0.1), TextXAlignment = Enum.TextXAlignment.Left })
 	local lockBtn = button(lockRow, { Text = "...", Size = UDim2.fromScale(0.3, 0.8), Position = UDim2.fromScale(0.67, 0.1) }, Color3.fromRGB(255, 90, 120), function()
 		Action:FireServer("BuyLock")
@@ -481,6 +504,30 @@ function HUD.Build()
 				text(row, { Text = "⏳", Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2) })
 			end
 		end
+		-- Achievements (под квестами)
+		local header = text(questList, { Text = "🏆 ACHIEVEMENTS", Size = UDim2.new(1, 0, 0, 30), TextColor3 = Color3.fromRGB(255, 215, 90) })
+		header.LayoutOrder = 50
+		for i, a in meta.Ach or {} do
+			local row = Instance.new("Frame")
+			row.LayoutOrder = 60 + i + (if a.Done then 100 else 0)
+			row.BackgroundColor3 = if a.Done then Color3.fromRGB(40, 70, 50) else Color3.fromRGB(45, 30, 75)
+			corner(row, 14)
+			row.Parent = questList
+			text(row, { Text = (if a.Done then "✅ " else "🏆 ") .. a.Name, Size = UDim2.new(0.62, 0, 0.5, 0), Position = UDim2.fromScale(0.03, 0.06), TextXAlignment = Enum.TextXAlignment.Left })
+			local goalText = if a.Stat == "TotalEarned" then Format.money(a.Prog) .. " / " .. Format.money(a.Goal) else a.Prog .. " / " .. a.Goal
+			text(row, { Text = a.Stat .. ": " .. goalText, Size = UDim2.new(0.62, 0, 0.34, 0), Position = UDim2.fromScale(0.03, 0.58), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(200, 200, 230) })
+			text(row, { Text = if a.Tokens > 0 then "🔮 +" .. a.Tokens else "💰", Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2), TextColor3 = Color3.fromRGB(210, 170, 255) })
+		end
+		-- Перки (в панели Rebirth)
+		tokensText.Text = "🔮 Rebirth Tokens: " .. (meta.Tokens or 0)
+		clear(perkList)
+		for i, pk in Config.Perks do
+			local lvl = (meta.Perks and meta.Perks[pk.Id]) or 0
+			local b = button(perkList, { Text = ("%s Lv.%d/%d\n%s"):format(pk.Name, lvl, pk.Max, if lvl >= pk.Max then "MAX" else "🔮 " .. pk.Cost), LayoutOrder = i }, if lvl >= pk.Max then Color3.fromRGB(80, 80, 100) else Color3.fromRGB(140, 80, 220), function()
+				Action:FireServer("BuyPerk", pk.Id)
+			end)
+			b.TextScaled = true
+		end
 		if questsBtnCap then
 			questsBtnCap.Text = if claimable > 0 then "Claim " .. claimable .. "!" else "Quests"
 		end
@@ -489,7 +536,7 @@ function HUD.Build()
 		meta = m
 		rebuildMeta()
 	end)
-	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel, fusePanel, spinPanel }
+	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel, fusePanel, spinPanel, basePanel }
 
 	-- Кнопки слева: сетка 3x3
 	local side = Instance.new("Frame")
@@ -557,6 +604,9 @@ function HUD.Build()
 	local spinCap = iconButton("🎡", "Spin", Color3.fromRGB(255, 110, 70), function()
 		toggle(spinPanel)
 	end)
+	iconButton("🏠", "Base", Color3.fromRGB(120, 200, 255), function()
+		toggle(basePanel)
+	end)
 	iconButton("♻️", "Rebirth", Color3.fromRGB(170, 95, 255), function()
 		toggle(rebirth)
 	end)
@@ -589,6 +639,9 @@ function HUD.Build()
 		local lv = s.LockLevel or 0
 		lockText.Text = ("🔒 Lock Lv.%d  (%ds%s)"):format(lv + 1, durs[lv + 1] or durs[#durs], if durs[lv + 2] then " → " .. durs[lv + 2] .. "s" else "")
 		lockBtn.Text = if (s.LockCost or -1) < 0 then "MAX" else Format.money(s.LockCost)
+		local tl = s.TrapLevel or 0
+		trapText.Text = if tl > 0 then ("🪤 Trap Lv.%d  (stun %ss)"):format(tl, tostring(Config.Trap.Stun[tl])) else "🪤 Entrance Trap (stuns thieves)"
+		trapBtn.Text = if (s.TrapCost or -1) < 0 then "MAX" else Format.money(s.TrapCost)
 		rebuildFuse(s.Fusable or {})
 		local rw = s.Rewards
 		if rw then

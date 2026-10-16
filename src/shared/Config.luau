@@ -7,6 +7,7 @@ local Config = {}
 Config.GameName = "Steal a Slime!"
 Config.DataStoreName = "SlimeData_v1"
 Config.LeaderboardStore = "SlimeTopEarned_v1"
+Config.StealsBoardStore = "SlimeTopSteals_v1"
 
 -- Админы: им доступен режим съёмки шортсов (F6/F7). Вставь свой UserId.
 Config.Admins = {} :: { number }
@@ -148,6 +149,39 @@ Config.Quests = {
 }
 Config.QuestRewardMinutes = 8 -- награда = доход за N минут
 Config.QuestRewardMin = 1_000
+
+-- 🪤 Ловушка у входа базы: оглушает чужих игроков
+Config.Trap = { Stun = { 2, 3, 4.5 }, Costs = { 20_000, 400_000, 8_000_000 }, Cooldown = 6 }
+
+-- 🔮 Перки за Rebirth Tokens (вечные)
+Config.Perks = {
+	{ Id = "Income", Name = "💰 Income", Desc = "+10% cash per level", Max = 10, Cost = 1 },
+	{ Id = "Offline", Name = "💤 Offline", Desc = "+10% offline earnings per level", Max = 5, Cost = 1 },
+	{ Id = "Start", Name = "🏁 Head Start", Desc = "x3 start cash after rebirth per level", Max = 5, Cost = 1 },
+	{ Id = "Speed", Name = "👟 Swift", Desc = "+1 walk speed per level", Max = 5, Cost = 2 },
+}
+
+-- 🏆 Достижения: Stat → порог. Награда: деньги (минуты дохода) + Rebirth Tokens
+Config.Achievements = {
+	{ Id = "Steal1", Name = "First Heist", Stat = "Steals", Goal = 1, Minutes = 3, Tokens = 0 },
+	{ Id = "Steal10", Name = "Sneaky Fingers", Stat = "Steals", Goal = 10, Minutes = 10, Tokens = 1 },
+	{ Id = "Steal100", Name = "Master Thief", Stat = "Steals", Goal = 100, Minutes = 30, Tokens = 2 },
+	{ Id = "Bonk10", Name = "Bonk Squad", Stat = "Bonks", Goal = 10, Minutes = 5, Tokens = 0 },
+	{ Id = "Bonk100", Name = "Bonk Lord", Stat = "Bonks", Goal = 100, Minutes = 20, Tokens = 1 },
+	{ Id = "Up10", Name = "Trainer", Stat = "Upgrades", Goal = 10, Minutes = 5, Tokens = 0 },
+	{ Id = "Up100", Name = "Slime Coach", Stat = "Upgrades", Goal = 100, Minutes = 20, Tokens = 1 },
+	{ Id = "Fuse1", Name = "Mad Scientist", Stat = "Fused", Goal = 1, Minutes = 10, Tokens = 1 },
+	{ Id = "Fuse10", Name = "MEGA Maker", Stat = "Fused", Goal = 10, Minutes = 30, Tokens = 2 },
+	{ Id = "Mut5", Name = "Mutant", Stat = "Mutations", Goal = 5, Minutes = 10, Tokens = 0 },
+	{ Id = "Event5", Name = "Event Hunter", Stat = "EventClaims", Goal = 5, Minutes = 10, Tokens = 1 },
+	{ Id = "Obby1", Name = "Sky Walker", Stat = "ObbyWins", Goal = 1, Minutes = 10, Tokens = 1 },
+	{ Id = "Boss1", Name = "King Slayer", Stat = "BossMVP", Goal = 1, Minutes = 20, Tokens = 2 },
+	{ Id = "Reb1", Name = "Reborn", Stat = "Rebirths", Goal = 1, Minutes = 5, Tokens = 1 },
+	{ Id = "Reb5", Name = "Eternal", Stat = "Rebirths", Goal = 5, Minutes = 20, Tokens = 2 },
+	{ Id = "Idx25", Name = "Collector", Stat = "Index", Goal = 25, Minutes = 15, Tokens = 1 },
+	{ Id = "Idx50", Name = "Slimeologist", Stat = "Index", Goal = 50, Minutes = 30, Tokens = 2 },
+	{ Id = "Rich", Name = "Billionaire", Stat = "TotalEarned", Goal = 1_000_000_000, Minutes = 30, Tokens = 2 },
+}
 
 -- 🌍 Зоны с отдельными дорогами (открываются ребёртами)
 Config.Zones = {

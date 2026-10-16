@@ -68,6 +68,7 @@ function ZoneService:OpenChest(player: Player)
 		return
 	end
 	data.ObbyChestAt = now + cfg.Cooldown
+	self.S.DataService:Stat(player, "ObbyWins")
 	local reward = math.floor(math.max(cfg.RewardMin, self.S.EconomyService:GetIncome(player) * 60 * cfg.RewardMinutes))
 	self.S.EconomyService:AddCash(player, reward)
 	self.S.SocialService:NotifyAll("🗼 " .. player.DisplayName .. " beat the SKY OBBY and opened the chest!", Color3.fromRGB(255, 230, 120))

@@ -263,6 +263,54 @@ function PlotService:Lock(player: Player)
 	self.S.SocialService:Notify(player, "🔒 Base locked for " .. duration .. "s", Color3.fromRGB(255, 120, 140))
 end
 
+function PlotService:RefreshTrap(player: Player)
+	local plot = plotOf[player]
+	local data = self.S.DataService:Get(player)
+	if not plot or not data then
+		return
+	end
+	local on = (data.TrapLevel or 0) > 0
+	plot.TrapPad.Transparency = if on then 0.75 else 1
+	plot.TrapPad.CanTouch = on
+end
+
+function PlotService:_trapHit(plot, hit: BasePart)
+	local owner = plot.Owner
+	local victim = Players:GetPlayerFromCharacter(hit.Parent)
+	if not owner or not victim or victim == owner or victim:GetAttribute("Invisible") or victim:GetAttribute("Stunned") then
+		return
+	end
+	local data = self.S.DataService:Get(owner)
+	local lvl = data and data.TrapLevel or 0
+	if lvl <= 0 or os.clock() < (plot.TrapReady or 0) then
+		return
+	end
+	plot.TrapReady = os.clock() + Config.Trap.Cooldown
+	local stun = Config.Trap.Stun[math.min(lvl, #Config.Trap.Stun)]
+	local hum = victim.Character and victim.Character:FindFirstChildOfClass("Humanoid")
+	if not hum then
+		return
+	end
+	victim:SetAttribute("Stunned", true)
+	self.S.ProgressionService:ApplySpeed(victim)
+	hum.JumpHeight = 0
+	plot.TrapPad.Transparency = 0.2
+	self.S.SocialService:Notify(victim, "🪤 You stepped on a trap! Stunned for " .. stun .. "s", Color3.fromRGB(200, 120, 255))
+	self.S.SocialService:Notify(owner, "🪤 Your trap caught " .. victim.DisplayName .. "!", Color3.fromRGB(200, 120, 255))
+	task.delay(stun, function()
+		victim:SetAttribute("Stunned", false)
+		if hum.Parent then
+			hum.JumpHeight = 7.2
+		end
+		if victim.Parent then
+			self.S.ProgressionService:ApplySpeed(victim)
+		end
+		if plot.Owner then
+			plot.TrapPad.Transparency = 0.75
+		end
+	end)
+end
+
 function PlotService:_setWalls(plot, on: boolean)
 	for _, w in plot.LockWalls do
 		w.CanCollide = on
@@ -318,14 +366,19 @@ function PlotService:_release(player: Player)
 	plot.LockedUntil = 0
 	plot.LockReadyAt = 0
 	self:_setWalls(plot, false)
+	plot.TrapPad.Transparency = 1
+	plot.TrapPad.CanTouch = false
 	plot.Model:SetAttribute("OwnerUserId", nil)
 	self:_setSign(plot, "Free Base")
 	plotOf[player] = nil
 end
 
 function PlotService:Start()
-	-- Касание кнопки замка
+	-- Касание кнопки замка и ловушки
 	for _, plot in self.Plots do
+		plot.TrapPad.Touched:Connect(function(hit)
+			self:_trapHit(plot, hit)
+		end)
 		plot.LockPad.Touched:Connect(function(hit)
 			local player = Players:GetPlayerFromCharacter(hit.Parent)
 			if player and plot.Owner == player then
@@ -341,6 +394,7 @@ function PlotService:Start()
 			return
 		end
 		self:RenderAll(player)
+		self:RefreshTrap(player)
 		local function onChar(char)
 			local root = char:WaitForChild("HumanoidRootPart", 10)
 			if root and plotOf[player] then

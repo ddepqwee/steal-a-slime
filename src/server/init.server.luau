@@ -16,6 +16,7 @@ local ORDER = {
 	"ProgressionService",
 	"SocialService",
 	"IndexService",
+	"AchievementService",
 	"QuestService",
 	"GearService",
 	"WorldEventService",

@@ -65,6 +65,7 @@ function EconomyService:_compute(player: Player)
 		mult *= 1 + Config.GroupIncomeBonus
 	end
 	mult *= 1 + self.S.IndexService:Bonus(data)
+	mult *= 1 + 0.1 * ((data.Perks and data.Perks.Income) or 0)
 	if (data.CashPotionUntil or 0) > os.time() then
 		mult *= 2
 	end
@@ -152,6 +153,8 @@ function EconomyService:SendState(player: Player)
 		Slots = self.S.PlotService:MaxSlots(player),
 		SlotCost = P:SlotCost(data) or -1,
 		LockLevel = data.LockLevel or 0,
+		TrapLevel = data.TrapLevel or 0,
+		TrapCost = P:TrapCost(data) or -1,
 		LockCost = P:LockUpgradeCost(data) or -1,
 		Fusable = self:_fusable(data),
 		Rewards = self.S.RewardService:StateFor(player, data),
@@ -185,7 +188,8 @@ function EconomyService:Start()
 		-- Офлайн-доход
 		if data.LastOnline > 0 then
 			local away = math.clamp(os.time() - data.LastOnline, 0, Config.OfflineMaxSeconds)
-			local earned = math.floor(self:GetIncome(player) * away * Config.OfflineRate)
+			local offPerk = (data.Perks and data.Perks.Offline) or 0
+			local earned = math.floor(self:GetIncome(player) * away * Config.OfflineRate * (1 + 0.1 * offPerk))
 			if earned > 0 then
 				self:AddCash(player, earned)
 				task.delay(3, function()
