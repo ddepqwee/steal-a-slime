@@ -167,17 +167,65 @@ function StealService:_giveBonk(player: Player)
 	tool.Name = "Bonk Bat"
 	tool.RequiresHandle = true
 	tool.CanBeDropped = false
+	-- 🏏 Деревянная бита с розовой обмоткой и слаймом на конце (ось биты = X рукоятки)
 	local handle = Instance.new("Part")
 	handle.Name = "Handle"
 	handle.Shape = Enum.PartType.Cylinder
-	handle.Size = Vector3.new(4.2, 0.6, 0.6)
-	handle.Color = Color3.fromRGB(255, 120, 200)
-	handle.Material = Enum.Material.SmoothPlastic
+	handle.Size = Vector3.new(1.8, 0.36, 0.36)
+	handle.Color = Color3.fromRGB(70, 40, 30)
+	handle.Material = Enum.Material.Fabric
 	handle.CanCollide = false
 	handle.Massless = true
 	handle.Parent = tool
-	tool.Grip = CFrame.new(-1.6, 0, 0) * CFrame.Angles(0, 0, math.rad(90))
+	local WOOD = Color3.fromRGB(226, 172, 105)
+	local PINK = Color3.fromRGB(255, 90, 190)
+	local GOO = Color3.fromRGB(120, 255, 140)
+	local function piece(shape, size: Vector3, offset: CFrame, color: Color3, mat, props)
+		local p = Instance.new("Part")
+		p.Shape = shape
+		p.Size = size
+		p.Color = color
+		p.Material = mat
+		p.CanCollide = false
+		p.CanTouch = false
+		p.CanQuery = false
+		p.Massless = true
+		p.CastShadow = false
+		for k, v in props or {} do
+			p[k] = v
+		end
+		local w = Instance.new("Weld")
+		w.Part0 = handle
+		w.Part1 = p
+		w.C0 = offset
+		w.Parent = p
+		p.Parent = tool
+		return p
+	end
+	local CYL, BALL = Enum.PartType.Cylinder, Enum.PartType.Ball
+	piece(CYL, Vector3.new(0.2, 0.62, 0.62), CFrame.new(-0.98, 0, 0), Color3.fromRGB(50, 28, 20), Enum.Material.Wood) -- набалдашник
+	for _, x in { -0.55, -0.1, 0.35 } do
+		piece(CYL, Vector3.new(0.12, 0.41, 0.41), CFrame.new(x, 0, 0), PINK, Enum.Material.SmoothPlastic) -- обмотка
+	end
+	piece(CYL, Vector3.new(1.0, 0.56, 0.56), CFrame.new(1.35, 0, 0), WOOD, Enum.Material.Wood) -- сужение
+	piece(CYL, Vector3.new(2.3, 0.86, 0.86), CFrame.new(2.95, 0, 0), WOOD, Enum.Material.Wood) -- бочка
+	piece(BALL, Vector3.new(0.86, 0.86, 0.86), CFrame.new(4.1, 0, 0), WOOD, Enum.Material.Wood) -- скруглённый конец
+	piece(CYL, Vector3.new(0.16, 0.9, 0.9), CFrame.new(2.1, 0, 0), PINK, Enum.Material.Neon) -- неоновое кольцо
+	-- слайм, налипший на конец, и капли
+	piece(BALL, Vector3.new(1.05, 1.05, 1.05), CFrame.new(4.15, 0.08, 0), GOO, Enum.Material.SmoothPlastic, { Transparency = 0.15, Reflectance = 0.1 })
+	piece(BALL, Vector3.new(0.42, 0.42, 0.42), CFrame.new(3.55, 0.4, 0.12), GOO, Enum.Material.SmoothPlastic, { Transparency = 0.15 })
+	piece(BALL, Vector3.new(0.3, 0.3, 0.3), CFrame.new(3.15, 0.1, 0.42), GOO, Enum.Material.SmoothPlastic, { Transparency = 0.15 })
+	piece(BALL, Vector3.new(0.24, 0.24, 0.24), CFrame.new(3.6, -0.43, -0.1), GOO, Enum.Material.SmoothPlastic, { Transparency = 0.15 })
+	-- рука держит у набалдашника, бита смотрит вверх
+	tool.Grip = CFrame.new(-0.45, 0, 0) * CFrame.Angles(0, 0, math.rad(90))
+	tool.ToolTip = "BONK thieves!"
 	tool.Activated:Connect(function()
+		-- взмах: стандартный Animate проигрывает анимацию удара по toolanim = "Slash"
+		local anim = Instance.new("StringValue")
+		anim.Name = "toolanim"
+		anim.Value = "Slash"
+		anim.Parent = tool
+		game:GetService("Debris"):AddItem(anim, 1)
 		self:Bonk(player, false)
 	end)
 	tool.Parent = backpack
