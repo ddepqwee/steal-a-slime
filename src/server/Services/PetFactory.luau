@@ -64,7 +64,7 @@ function PetFactory:Build(entry, opts): Model
 	local rarity = Config.Rarities[def.Rarity]
 	local model = Instance.new("Model")
 	model.Name = def.Name
-	local s = def.Size * (opts.Scale or 1)
+	local s = def.Size * (opts.Scale or 1) * (if entry.M then Config.Fuse.MegaSize else 1)
 	local color = if variant then variant.Color else def.Color
 
 	local mat = Enum.Material.SmoothPlastic
@@ -74,6 +74,11 @@ function PetFactory:Build(entry, opts): Model
 		mat = Enum.Material.Glass
 	elseif entry.V == "Gold" then
 		mat = Enum.Material.Foil
+	end
+	if entry.V == "Diamond" then
+		mat = Enum.Material.Glass
+	elseif entry.V == "Galaxy" then
+		mat = Enum.Material.Neon
 	end
 
 	-- Корень — невидимый хитбокс, чтобы ProximityPrompt был стабильным
@@ -188,6 +193,26 @@ function PetFactory:Build(entry, opts): Model
 		pe.Color = ColorSequence.new(rarity.Color)
 		pe.Parent = body
 	end
+	if entry.V == "Galaxy" or entry.V == "Diamond" then
+		local stars = Instance.new("ParticleEmitter")
+		stars.Rate = 14
+		stars.Lifetime = NumberRange.new(1, 2)
+		stars.Speed = NumberRange.new(0.5, 1.5)
+		stars.SpreadAngle = Vector2.new(180, 180)
+		stars.LightEmission = 1
+		stars.Size = NumberSequence.new(0.25, 0)
+		stars.Color = ColorSequence.new(if entry.V == "Galaxy" then Color3.fromRGB(230, 220, 255) else Color3.fromRGB(200, 250, 255))
+		stars.Parent = body
+	end
+	if entry.V == "Candy" then
+		local band = cyl(model, root, Vector3.new(s * 0.16, s * 1.02, s * 1.02), Color3.new(1, 1, 1), CFrame.new(0, s * 0.05, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		band.Material = Enum.Material.SmoothPlastic
+	end
+	if entry.M then
+		-- MEGA: золотое кольцо-ореол
+		local halo = cyl(model, root, Vector3.new(s * 0.08, s * 0.7, s * 0.7), Color3.fromRGB(255, 220, 80), CFrame.new(0, s * 1.0, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		halo.Material = Enum.Material.Neon
+	end
 	if entry.V == "Rainbow" or def.Glitch then
 		CollectionService:AddTag(body, "Rainbow")
 		CollectionService:AddTag(top, "Rainbow")
@@ -218,6 +243,9 @@ function PetFactory:Build(entry, opts): Model
 		return t
 	end
 	local rarityText = rarity.Name
+	if entry.M then
+		rarityText = "MEGA " .. rarityText
+	end
 	if variant then
 		rarityText = variant.Label .. " " .. rarityText
 	end

@@ -34,6 +34,7 @@ local function template()
 		Index = { Blobby = true },
 		Gear = {},
 		ExtraSlots = 0,
+		LockLevel = 0,
 		Quests = nil,
 	}
 end

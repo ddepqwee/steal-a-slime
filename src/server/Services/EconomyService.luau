@@ -23,7 +23,7 @@ function EconomyService:PetIncome(entry): number
 	end
 	local v = entry.V and Config.Variants[entry.V]
 	local lvl = math.clamp(entry.L or 1, 1, Config.Upgrade.MaxLevel)
-	return def.Income * (if v then v.Mult else 1) * Config.Upgrade.IncomeMult ^ (lvl - 1)
+	return def.Income * (if v then v.Mult else 1) * Config.Upgrade.IncomeMult ^ (lvl - 1) * (if entry.M then Config.Fuse.MegaMult else 1)
 end
 
 -- Цена следующего уровня (или nil на максимуме)
@@ -34,7 +34,7 @@ function EconomyService:UpgradeCost(entry): number?
 		return nil
 	end
 	local v = entry.V and Config.Variants[entry.V]
-	return math.floor(def.Price * (if v then v.Mult else 1) * Config.Upgrade.CostBase * Config.Upgrade.CostMult ^ (lvl - 1))
+	return math.floor(def.Price * (if v then v.Mult else 1) * Config.Upgrade.CostBase * Config.Upgrade.CostMult ^ (lvl - 1) * (if entry.M then Config.Fuse.MegaMult else 1))
 end
 
 function EconomyService:PetValue(entry): number
@@ -44,7 +44,7 @@ function EconomyService:PetValue(entry): number
 	end
 	local v = entry.V and Config.Variants[entry.V]
 	local lvl = math.clamp(entry.L or 1, 1, Config.Upgrade.MaxLevel)
-	return def.Price * (if v then v.Mult else 1) * (1 + (lvl - 1) * 0.5)
+	return def.Price * (if v then v.Mult else 1) * (1 + (lvl - 1) * 0.5) * (if entry.M then Config.Fuse.MegaMult else 1)
 end
 
 function EconomyService:_compute(player: Player)
@@ -109,6 +109,23 @@ function EconomyService:_leaderstats(player: Player, data)
 	end
 end
 
+function EconomyService:_fusable(data)
+	local counts = {}
+	for _, e in data.Pets do
+		if not e.M then
+			counts[e.Id] = (counts[e.Id] or 0) + 1
+		end
+	end
+	local list = {}
+	for id, n in counts do
+		table.insert(list, { Id = id, Count = n })
+	end
+	table.sort(list, function(a, b)
+		return a.Count > b.Count
+	end)
+	return list
+end
+
 function EconomyService:SendState(player: Player)
 	local data = self.S.DataService:Get(player)
 	if not data then
@@ -127,6 +144,9 @@ function EconomyService:SendState(player: Player)
 		SpeedMax = Config.Speed.MaxLevel,
 		Slots = self.S.PlotService:MaxSlots(player),
 		SlotCost = P:SlotCost(data) or -1,
+		LockLevel = data.LockLevel or 0,
+		LockCost = P:LockUpgradeCost(data) or -1,
+		Fusable = self:_fusable(data),
 		SlotsBought = data.ExtraSlots or 0,
 		SlotsBuyMax = Config.SlotUpgrade.Max,
 		UsedSlots = self.S.PlotService:UsedSlots(player),

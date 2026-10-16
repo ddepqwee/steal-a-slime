@@ -31,10 +31,33 @@ Config.SpawnInterval = 2.5
 Config.ConveyorSpeed = 9
 Config.GoldChance = 0.04 -- x3 дохода
 Config.RainbowChance = 0.005 -- x8 дохода
+-- Мутации. Chance — шанс на дороге (Gold/Rainbow масштабируются ивентами и удачей).
 Config.Variants = {
-	Gold = { Mult = 3, Color = Color3.fromRGB(255, 200, 40), Label = "GOLD" },
-	Rainbow = { Mult = 8, Color = Color3.fromRGB(255, 80, 200), Label = "RAINBOW" },
+	Gold = { Mult = 3, Color = Color3.fromRGB(255, 200, 40), Label = "GOLD", Icon = "🟡" },
+	Candy = { Mult = 4, Color = Color3.fromRGB(255, 130, 200), Label = "CANDY", Icon = "🍬", Season = "Halloween" },
+	Diamond = { Mult = 5, Color = Color3.fromRGB(120, 230, 255), Label = "DIAMOND", Icon = "💎" },
+	Rainbow = { Mult = 8, Color = Color3.fromRGB(255, 80, 200), Label = "RAINBOW", Icon = "🌈" },
+	Galaxy = { Mult = 12, Color = Color3.fromRGB(70, 30, 140), Label = "GALAXY", Icon = "🌌" },
 }
+Config.VariantRoll = {
+	{ V = "Galaxy", Chance = 0.0015 },
+	{ V = "Rainbow", Chance = 0.005, Luck = true },
+	{ V = "Diamond", Chance = 0.015 },
+	{ V = "Candy", Chance = 0.03 },
+	{ V = "Gold", Chance = 0.04, Gold = true },
+}
+
+-- Мутация своего слайма за деньги (кнопка R). Шансы показываются игроку.
+Config.Mutate = {
+	CostMult = 1.5, -- от текущей стоимости слайма
+	Odds = { { V = "Gold", W = 50 }, { V = "Diamond", W = 30 }, { V = "Rainbow", W = 15 }, { V = "Galaxy", W = 5 } },
+}
+
+-- Слияние: 3 одинаковых слайма → MEGA (доход x6)
+Config.Fuse = { Need = 3, MegaMult = 6, MegaSize = 1.35 }
+
+-- Прокачка замка базы
+Config.LockUpgrade = { Durations = { 60, 80, 100, 130 }, Costs = { 5_000, 75_000, 1_200_000 } }
 
 -- Кража и защита
 Config.StealHold = 1.2

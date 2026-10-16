@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Pets = require(ReplicatedStorage.Shared.Pets)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local ProgressionService = {}
@@ -87,6 +88,102 @@ function ProgressionService:BuySlot(player: Player)
 	self.S.SocialService:Notify(player, "🫧 +1 slime slot! (" .. self.S.PlotService:MaxSlots(player) .. " total)", Color3.fromRGB(140, 255, 200), "Buy")
 end
 
+function ProgressionService:MutateCost(entry): number
+	return math.floor(self.S.EconomyService:PetValue(entry) * Config.Mutate.CostMult)
+end
+
+function ProgressionService:Mutate(player: Player, slot: string)
+	local data = self.S.DataService:Get(player)
+	local entry = data and data.Pets[slot]
+	if not entry or self.S.StealService:IsCarried(player, slot) then
+		return
+	end
+	local cost = self:MutateCost(entry)
+	if not self.S.EconomyService:TrySpend(player, cost) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	local total = 0
+	for _, o in Config.Mutate.Odds do
+		total += o.W
+	end
+	local r = math.random() * total
+	local result = Config.Mutate.Odds[1].V
+	for _, o in Config.Mutate.Odds do
+		r -= o.W
+		if r <= 0 then
+			result = o.V
+			break
+		end
+	end
+	entry.V = result
+	self.S.EconomyService:Refresh(player)
+	self.S.PlotService:RenderSlot(player, slot)
+	local v = Config.Variants[result]
+	local def = Pets.ById[entry.Id]
+	if result == "Galaxy" or result == "Rainbow" then
+		self.S.SocialService:NotifyAll(v.Icon .. " " .. player.DisplayName .. " mutated " .. def.Name .. " into " .. v.Label .. "!", v.Color, "Legendary")
+	else
+		self.S.SocialService:Notify(player, v.Icon .. " Mutation: " .. v.Label .. " (x" .. v.Mult .. " cash)", v.Color, "Buy")
+	end
+end
+
+function ProgressionService:Fuse(player: Player, petId: any)
+	local data = self.S.DataService:Get(player)
+	if not data or type(petId) ~= "string" then
+		return
+	end
+	local slots = {}
+	for slot, entry in data.Pets do
+		if entry.Id == petId and not entry.M and not self.S.StealService:IsCarried(player, slot) then
+			table.insert(slots, slot)
+		end
+	end
+	if #slots < Config.Fuse.Need then
+		return
+	end
+	table.sort(slots, function(a, b)
+		return tonumber(a) < tonumber(b)
+	end)
+	local bestV, bestMult, bestL = nil, 1, 1
+	for i = 1, Config.Fuse.Need do
+		local e = data.Pets[slots[i]]
+		local v = e.V and Config.Variants[e.V]
+		if v and v.Mult > bestMult then
+			bestV, bestMult = e.V, v.Mult
+		end
+		bestL = math.max(bestL, e.L or 1)
+	end
+	for i = 2, Config.Fuse.Need do
+		self.S.PlotService:RemovePet(player, slots[i])
+	end
+	data.Pets[slots[1]] = { Id = petId, V = bestV, L = bestL, M = true }
+	self.S.EconomyService:Refresh(player)
+	self.S.PlotService:RenderSlot(player, slots[1])
+	self.S.SocialService:NotifyAll("⚗️ " .. player.DisplayName .. " fused a MEGA " .. Pets.ById[petId].Name .. "!", Color3.fromRGB(255, 220, 80), "Legendary")
+end
+
+function ProgressionService:LockUpgradeCost(data): number?
+	return Config.LockUpgrade.Costs[(data.LockLevel or 0) + 1]
+end
+
+function ProgressionService:BuyLockUpgrade(player: Player)
+	local data = self.S.DataService:Get(player)
+	if not data then
+		return
+	end
+	local cost = self:LockUpgradeCost(data)
+	if not cost then
+		return
+	end
+	if not self.S.EconomyService:TrySpend(player, cost) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	data.LockLevel = (data.LockLevel or 0) + 1
+	self.S.SocialService:Notify(player, "🔒 Lock upgraded! Now lasts " .. Config.LockUpgrade.Durations[data.LockLevel + 1] .. "s", Color3.fromRGB(255, 160, 180), "Buy")
+end
+
 function ProgressionService:UpgradePet(player: Player, slot: string)
 	local data = self.S.DataService:Get(player)
 	local entry = data and data.Pets[slot]
@@ -146,6 +243,10 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "Fuse" then
+			self:Fuse(player, arg)
+		elseif action == "BuyLock" then
+			self:BuyLockUpgrade(player)
 		elseif action == "BuySlot" then
 			self:BuySlot(player)
 		elseif action == "BuyGear" then

@@ -50,6 +50,28 @@ function SpawnService:RollRarity(luck: number, minRarity: number?): number
 	return 1
 end
 
+function SpawnService:RollVariant(luck: number, seasonName: string?): string?
+	local r = rng:NextNumber()
+	local acc = 0
+	for _, v in Config.VariantRoll do
+		local def = Config.Variants[v.V]
+		if not def.Season or def.Season == seasonName then
+			local c = v.Chance
+			if v.Luck then
+				c *= luck
+			end
+			if v.Gold then
+				c *= self.S.EventService:GetGoldMult()
+			end
+			acc += c
+			if r < acc then
+				return v.V
+			end
+		end
+	end
+	return nil
+end
+
 function SpawnService:RollEntry(minRarity: number?, luckMult: number?)
 	local luck = self.S.EventService:GetLuck() * (luckMult or 1)
 	local rarity = self:RollRarity(luck, minRarity)
@@ -62,14 +84,7 @@ function SpawnService:RollEntry(minRarity: number?, luckMult: number?)
 		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
 	end
 	local def = pool[rng:NextInteger(1, #pool)]
-	local variant
-	local gold = Config.GoldChance * self.S.EventService:GetGoldMult()
-	local r = rng:NextNumber()
-	if r < Config.RainbowChance * luck then
-		variant = "Rainbow"
-	elseif r < Config.RainbowChance * luck + gold then
-		variant = "Gold"
-	end
+	local variant = self:RollVariant(luck, seasonName)
 	return { Id = def.Id, V = variant }, def
 end
 

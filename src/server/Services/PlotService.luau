@@ -134,6 +134,24 @@ function PlotService:RenderSlot(player: Player, slot: string)
 		end
 	end)
 
+	local mutCost = self.S.ProgressionService:MutateCost(entry)
+	local mut = Instance.new("ProximityPrompt")
+	mut.Name = "MutatePrompt"
+	mut.ActionText = "Mutate " .. Format.money(mutCost)
+	mut.ObjectText = "🧬 Gold 50% · Diamond 30% · Rainbow 15% · Galaxy 5%"
+	mut.HoldDuration = 0.6
+	mut.MaxActivationDistance = 9
+	mut.RequiresLineOfSight = false
+	mut.KeyboardKeyCode = Enum.KeyCode.R
+	mut.UIOffset = Vector2.new(0, 140)
+	mut:SetAttribute("OwnerUserId", player.UserId)
+	mut.Parent = model.PrimaryPart
+	mut.Triggered:Connect(function(who)
+		if who == player then
+			self.S.ProgressionService:Mutate(player, slot)
+		end
+	end)
+
 	model.Parent = plot.Model
 	models[plot] = models[plot] or {}
 	models[plot][slot] = model
@@ -177,7 +195,7 @@ function PlotService:AddPet(player: Player, entry): string?
 	if not data or not slot then
 		return nil
 	end
-	data.Pets[slot] = { Id = entry.Id, V = entry.V, L = entry.L }
+	data.Pets[slot] = { Id = entry.Id, V = entry.V, L = entry.L, M = entry.M }
 	self.S.IndexService:Discover(player, entry.Id)
 	self.S.EconomyService:Refresh(player)
 	return slot
@@ -225,7 +243,9 @@ function PlotService:Lock(player: Player)
 	if os.clock() < (plot.LockReadyAt or 0) then
 		return
 	end
-	local duration = Config.LockDuration
+	local data = self.S.DataService:Get(player)
+	local lockLvl = math.clamp((data and data.LockLevel or 0) + 1, 1, #Config.LockUpgrade.Durations)
+	local duration = Config.LockUpgrade.Durations[lockLvl]
 	if self.S.MonetizationService:HasPass(player, "LongLock") then
 		duration *= 2
 	end

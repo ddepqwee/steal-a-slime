@@ -286,8 +286,8 @@ function HUD.Build()
 
 	local gearPanel = panel("Gear", "🧰 Gear Shop")
 	local gearList = scroller(gearPanel, UDim2.new(1, 0, 0, 70))
-	gearList.Position = UDim2.fromScale(0.04, 0.36)
-	gearList.Size = UDim2.fromScale(0.92, 0.6)
+	gearList.Position = UDim2.fromScale(0.04, 0.52)
+	gearList.Size = UDim2.fromScale(0.92, 0.45)
 	-- строка покупки слотов
 	local slotRow = Instance.new("Frame")
 	slotRow.BackgroundColor3 = Color3.fromRGB(60, 40, 100)
@@ -296,6 +296,13 @@ function HUD.Build()
 	corner(slotRow, 14)
 	stroke(slotRow, Color3.fromRGB(140, 255, 200), 2)
 	slotRow.Parent = gearPanel
+	local lockRow = slotRow:Clone()
+	lockRow.Position = UDim2.fromScale(0.04, 0.35)
+	lockRow.Parent = gearPanel
+	local lockText = text(lockRow, { Text = "🔒 Lock Upgrade", Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.03, 0.1), TextXAlignment = Enum.TextXAlignment.Left })
+	local lockBtn = button(lockRow, { Text = "...", Size = UDim2.fromScale(0.3, 0.8), Position = UDim2.fromScale(0.67, 0.1) }, Color3.fromRGB(255, 90, 120), function()
+		Action:FireServer("BuyLock")
+	end)
 	local slotText = text(slotRow, { Text = "🫧 +1 Slime Slot", Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.03, 0.1), TextXAlignment = Enum.TextXAlignment.Left })
 	local slotBtn = button(slotRow, { Text = "...", Size = UDim2.fromScale(0.3, 0.8), Position = UDim2.fromScale(0.67, 0.1) }, Color3.fromRGB(80, 200, 120), function()
 		Action:FireServer("BuySlot")
@@ -305,6 +312,42 @@ function HUD.Build()
 	local indexList = scroller(indexPanel, UDim2.new(0.235, 0, 0, 74))
 	local questPanel = panel("Quests", "📜 Daily Quests")
 	local questList = scroller(questPanel, UDim2.new(1, 0, 0, 74))
+	local fusePanel = panel("Fuse", "⚗️ Fuse 3 → MEGA (x6 cash)")
+	local fuseList = scroller(fusePanel, UDim2.new(1, 0, 0, 64))
+	local fuseKey = ""
+	local function rebuildFuse(list)
+		local key = ""
+		for _, g in list do
+			key ..= g.Id .. g.Count .. ","
+		end
+		if key == fuseKey then
+			return
+		end
+		fuseKey = key
+		clear(fuseList)
+		if #list == 0 then
+			text(fuseList, { Text = "Collect 3 of the same slime to fuse a MEGA!", Size = UDim2.new(1, 0, 0, 40) })
+		end
+		for i, g in list do
+			local def = Pets.ById[g.Id]
+			if def then
+				local row = Instance.new("Frame")
+				row.LayoutOrder = if g.Count >= Config.Fuse.Need then i else 100 + i
+				row.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
+				corner(row, 14)
+				stroke(row, Config.Rarities[def.Rarity].Color, 2)
+				row.Parent = fuseList
+				text(row, { Text = ("%s  x%d"):format(def.Name, g.Count), Size = UDim2.fromScale(0.6, 0.7), Position = UDim2.fromScale(0.03, 0.15), TextXAlignment = Enum.TextXAlignment.Left })
+				if g.Count >= Config.Fuse.Need then
+					button(row, { Text = "Fuse!", Size = UDim2.fromScale(0.3, 0.75), Position = UDim2.fromScale(0.67, 0.12) }, Color3.fromRGB(255, 190, 40), function()
+						Action:FireServer("Fuse", g.Id)
+					end)
+				else
+					text(row, { Text = g.Count .. "/" .. Config.Fuse.Need, Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2), TextColor3 = Color3.fromRGB(200, 200, 220) })
+				end
+			end
+		end
+	end
 	local meta = nil
 	local questsBtnCap
 
@@ -389,14 +432,14 @@ function HUD.Build()
 		meta = m
 		rebuildMeta()
 	end)
-	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel }
+	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel, fusePanel }
 
 	-- Кнопки слева: сетка 3x3
 	local side = Instance.new("Frame")
 	side.BackgroundTransparency = 1
 	side.AnchorPoint = Vector2.new(0, 0.5)
 	side.Position = UDim2.new(0, 10, 0.5, 0)
-	side.Size = UDim2.fromOffset(204, 204)
+	side.Size = UDim2.fromOffset(204, 272)
 	side.Parent = gui
 	HUD.Side = side
 	local gl = Instance.new("UIGridLayout")
@@ -451,6 +494,9 @@ function HUD.Build()
 	questsBtnCap = iconButton("📜", "Quests", Color3.fromRGB(255, 140, 60), function()
 		toggle(questPanel)
 	end)
+	iconButton("⚗️", "Fuse", Color3.fromRGB(255, 200, 60), function()
+		toggle(fusePanel)
+	end)
 	iconButton("♻️", "Rebirth", Color3.fromRGB(170, 95, 255), function()
 		toggle(rebirth)
 	end)
@@ -479,6 +525,11 @@ function HUD.Build()
 		slots.Text = "🫧 Slimes: " .. s.UsedSlots .. "/" .. s.Slots
 		slotText.Text = ("🫧 +1 Slime Slot  (%d/%d bought)"):format(s.SlotsBought or 0, s.SlotsBuyMax or 6)
 		slotBtn.Text = if (s.SlotCost or -1) < 0 then "MAX" else Format.money(s.SlotCost)
+		local durs = Config.LockUpgrade.Durations
+		local lv = s.LockLevel or 0
+		lockText.Text = ("🔒 Lock Lv.%d  (%ds%s)"):format(lv + 1, durs[lv + 1] or durs[#durs], if durs[lv + 2] then " → " .. durs[lv + 2] .. "s" else "")
+		lockBtn.Text = if (s.LockCost or -1) < 0 then "MAX" else Format.money(s.LockCost)
+		rebuildFuse(s.Fusable or {})
 		speedBtn.Text = if s.SpeedCost < 0 then "MAX" else Format.money(s.SpeedCost)
 		dailyBtn.Text = if s.DailyIn <= 0 then "Claim!" else Format.time(s.DailyIn)
 		rebInfo.Text = ("Rebirths: %d\nCost: %s\nReward: +%d%% cash forever\n(cash, slimes and speed reset)"):format(
