@@ -64,8 +64,18 @@ handlers.Cash = function(self, player, info)
 end
 
 handlers.LuckySpawn = function(self, player)
-	self.S.SpawnService:QueueLucky(player)
-	self.S.SocialService:NotifyAll(player.DisplayName .. " bought LUCKY SPAWN! 🍀 Next slime is LEGENDARY!", Color3.fromRGB(255, 200, 0))
+	-- Legendary+ слайм сразу на базу покупателя (никто не перехватит)
+	local entry = self.S.SpawnService:RollEntry(5, 1)
+	local Pets = require(game:GetService("ReplicatedStorage").Shared.Pets)
+	local def = Pets.ById[entry.Id]
+	if self.S.RewardService:_giveSlime(player, entry) then
+		self.S.SocialService:NotifyAll("🍀 " .. player.DisplayName .. " got a LUCKY " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. "!", Config.Rarities[def.Rarity].Color, "Legendary")
+	else
+		-- база заполнена — честная компенсация: 2 часа дохода (минимум $250K)
+		local amount = math.max(250_000, self.S.EconomyService:GetIncome(player) * 7200)
+		self.S.EconomyService:AddCash(player, amount)
+		self.S.SocialService:Notify(player, "🍀 Your base was full, so you got " .. Format.money(amount) .. " instead!", Color3.fromRGB(255, 200, 0))
+	end
 	return true
 end
 

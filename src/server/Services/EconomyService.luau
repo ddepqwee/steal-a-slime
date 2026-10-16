@@ -60,6 +60,9 @@ function EconomyService:_compute(player: Player)
 	if self.S.MonetizationService:HasPass(player, "DoubleCash") then
 		mult *= 2
 	end
+	if self.S.MonetizationService:HasPass(player, "VIP") then
+		mult *= 1.2
+	end
 	mult *= 1 + (tonumber(player:GetAttribute("FriendBoost")) or 0)
 	if player:GetAttribute("InGroup") then
 		mult *= 1 + Config.GroupIncomeBonus

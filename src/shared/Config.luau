@@ -97,16 +97,16 @@ Config.AnnounceFromRarity = 5 -- с Legendary объявляем на весь �
 -- Монетизация. Создай пассы/продукты на create.roblox.com и впиши сюда их ID.
 -- Пока Id = 0, кнопка в магазине скрыта.
 Config.GamePasses = {
-	DoubleCash = { Id = 0, Title = "2x Cash", Desc = "Double cash forever", Price = 199 },
-	VIP = { Id = 0, Title = "VIP", Desc = "+25% luck, +speed, VIP tag", Price = 299 },
-	ExtraSlots = { Id = 0, Title = "+3 Slots", Desc = "More room on your base", Price = 149 },
-	LongLock = { Id = 0, Title = "Mega Lock", Desc = "Base lock lasts 2x longer", Price = 99 },
+	DoubleCash = { Id = 2040302493, Title = "2x Cash", Desc = "Double cash forever", Price = 199 },
+	VIP = { Id = 2037878950, Title = "VIP", Desc = "+20% cash, +speed, VIP tag", Price = 299 },
+	ExtraSlots = { Id = 2038346928, Title = "+3 Slots", Desc = "More room on your base", Price = 149 },
+	LongLock = { Id = 2037806981, Title = "Mega Lock", Desc = "Base lock lasts 2x longer", Price = 99 },
 }
 Config.Products = {
-	CashSmall = { Id = 0, Title = "Cash Pack", Desc = "10 minutes of income", Kind = "Cash", Minutes = 10, Min = 1_000, Price = 29 },
-	CashBig = { Id = 0, Title = "Cash Vault", Desc = "1 hour of income", Kind = "Cash", Minutes = 60, Min = 10_000, Price = 129 },
-	LuckySpawn = { Id = 0, Title = "Lucky Spawn", Desc = "Next slime: Legendary 74.2% · Mythic 20.6% · Secret 4.1% · Celestial 1% (+mutation chance)", Kind = "LuckySpawn", Price = 79 },
-	ServerLuck = { Id = 0, Title = "Server Luck x2", Desc = "15 min of luck for the whole server", Kind = "ServerLuck", Minutes = 15, Price = 99 },
+	CashSmall = { Id = 3719002413, Title = "Cash Pack", Desc = "10 minutes of income", Kind = "Cash", Minutes = 10, Min = 1_000, Price = 29 },
+	CashBig = { Id = 3719002517, Title = "Cash Vault", Desc = "1 hour of income", Kind = "Cash", Minutes = 60, Min = 10_000, Price = 129 },
+	LuckySpawn = { Id = 3719002621, Title = "Lucky Spawn", Desc = "Free slime to your base: Legendary 74.2% · Mythic 20.6% · Secret 4.1% · Celestial 1%", Kind = "LuckySpawn", Price = 79 },
+	ServerLuck = { Id = 3719002720, Title = "Server Luck x2", Desc = "15 min of luck for the whole server", Kind = "ServerLuck", Minutes = 15, Price = 99 },
 }
 
 -- Расписание авто-ивентов (UTC). Работают сами, без апдейтов.
