@@ -243,6 +243,12 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "ClaimGift" then
+			self.S.RewardService:ClaimGift(player)
+		elseif action == "Spin" then
+			self.S.RewardService:Spin(player)
+		elseif action == "BuyPotion" then
+			self.S.RewardService:BuyPotion(player, arg)
 		elseif action == "Fuse" then
 			self:Fuse(player, arg)
 		elseif action == "BuyLock" then

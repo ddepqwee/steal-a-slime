@@ -35,6 +35,8 @@ local function template()
 		Gear = {},
 		ExtraSlots = 0,
 		LockLevel = 0,
+		LastSpin = 0,
+		CashPotionUntil = 0,
 		Quests = nil,
 	}
 end

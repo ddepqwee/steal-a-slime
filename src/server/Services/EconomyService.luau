@@ -65,6 +65,9 @@ function EconomyService:_compute(player: Player)
 		mult *= 1 + Config.GroupIncomeBonus
 	end
 	mult *= 1 + self.S.IndexService:Bonus(data)
+	if (data.CashPotionUntil or 0) > os.time() then
+		mult *= 2
+	end
 	return { base = base, mult = mult }
 end
 
@@ -106,6 +109,10 @@ function EconomyService:_leaderstats(player: Player, data)
 	if ls then
 		ls.Cash.Value = Format.money(data.Cash)
 		ls.Rebirths.Value = data.Rebirths
+		local st = ls:FindFirstChild("Steals")
+		if st then
+			st.Value = data.Steals or 0
+		end
 	end
 end
 
@@ -147,6 +154,7 @@ function EconomyService:SendState(player: Player)
 		LockLevel = data.LockLevel or 0,
 		LockCost = P:LockUpgradeCost(data) or -1,
 		Fusable = self:_fusable(data),
+		Rewards = self.S.RewardService:StateFor(player, data),
 		SlotsBought = data.ExtraSlots or 0,
 		SlotsBuyMax = Config.SlotUpgrade.Max,
 		UsedSlots = self.S.PlotService:UsedSlots(player),
@@ -166,6 +174,10 @@ function EconomyService:Start()
 		local reb = Instance.new("IntValue")
 		reb.Name = "Rebirths"
 		reb.Parent = ls
+		local st = Instance.new("IntValue")
+		st.Name = "Steals"
+		st.Value = data.Steals or 0
+		st.Parent = ls
 		ls.Parent = player
 
 		self:Refresh(player)

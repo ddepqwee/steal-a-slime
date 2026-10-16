@@ -348,6 +348,50 @@ function HUD.Build()
 			end
 		end
 	end
+	local potionBtns = {}
+
+	-- 🎡 Колесо удачи
+	local spinPanel = panel("Spin", "🎡 Lucky Spin (free every 4h)")
+	local spinRows = {}
+	for i, pr in Config.Spin.Prizes do
+		local row = Instance.new("Frame")
+		row.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
+		row.Position = UDim2.new(0.06, 0, 0.18 + (i - 1) * 0.085, 0)
+		row.Size = UDim2.fromScale(0.5, 0.075)
+		corner(row, 10)
+		row.Parent = spinPanel
+		text(row, { Text = pr.Label, Size = UDim2.fromScale(0.94, 0.8), Position = UDim2.fromScale(0.03, 0.1) })
+		spinRows[i] = row
+	end
+	local spinResult = text(spinPanel, { Text = "", Size = UDim2.fromScale(0.36, 0.3), Position = UDim2.fromScale(0.6, 0.25), TextColor3 = Color3.fromRGB(255, 240, 150) })
+	local spinBtn = button(spinPanel, { Text = "SPIN!", Size = UDim2.fromScale(0.32, 0.16), Position = UDim2.fromScale(0.62, 0.66) }, Color3.fromRGB(255, 120, 60), function()
+		Action:FireServer("Spin")
+	end)
+	local spinning = false
+	Net.event("Reward").OnClientEvent:Connect(function(kind, d)
+		if kind ~= "Spin" or spinning then
+			return
+		end
+		spinning = true
+		spinResult.Text = ""
+		local n = #spinRows
+		local steps = n * 3 + d.Index
+		for k = 1, steps do
+			for i, row in spinRows do
+				row.BackgroundColor3 = if i == ((k - 1) % n) + 1 then Color3.fromRGB(255, 190, 40) else Color3.fromRGB(45, 30, 75)
+			end
+			task.wait(0.04 + (k / steps) ^ 3 * 0.25)
+		end
+		spinResult.Text = "🎉 " .. d.Text
+		spinning = false
+	end)
+
+	-- 🎁 Подарок за время (справа)
+	local giftBtn = button(gui, { Text = "🎁", Size = UDim2.fromOffset(120, 64), AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0) }, Color3.fromRGB(255, 120, 180), function()
+		Action:FireServer("ClaimGift")
+	end)
+	HUD.GiftBtn = giftBtn
+
 	local meta = nil
 	local questsBtnCap
 
@@ -360,6 +404,19 @@ function HUD.Build()
 		local owned = {}
 		for _, id in meta.Gear do
 			owned[id] = true
+		end
+		potionBtns = {}
+		for i, pdef in Config.Potions do
+			local row = Instance.new("Frame")
+			row.LayoutOrder = 100 + i
+			row.BackgroundColor3 = Color3.fromRGB(35, 55, 70)
+			corner(row, 14)
+			row.Parent = gearList
+			text(row, { Text = pdef.Icon .. " " .. pdef.Name, Size = UDim2.new(0.62, 0, 0.5, 0), Position = UDim2.fromScale(0.03, 0.05), TextXAlignment = Enum.TextXAlignment.Left })
+			text(row, { Text = pdef.Desc, Size = UDim2.new(0.62, 0, 0.36, 0), Position = UDim2.fromScale(0.03, 0.56), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(190, 240, 255) })
+			potionBtns[pdef.Id] = button(row, { Text = "...", Size = UDim2.fromScale(0.3, 0.7), Position = UDim2.fromScale(0.67, 0.15) }, Color3.fromRGB(60, 170, 220), function()
+				Action:FireServer("BuyPotion", pdef.Id)
+			end)
 		end
 		for i, g in Config.Gear do
 			local row = Instance.new("Frame")
@@ -432,7 +489,7 @@ function HUD.Build()
 		meta = m
 		rebuildMeta()
 	end)
-	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel, fusePanel }
+	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel, fusePanel, spinPanel }
 
 	-- Кнопки слева: сетка 3x3
 	local side = Instance.new("Frame")
@@ -497,6 +554,9 @@ function HUD.Build()
 	iconButton("⚗️", "Fuse", Color3.fromRGB(255, 200, 60), function()
 		toggle(fusePanel)
 	end)
+	local spinCap = iconButton("🎡", "Spin", Color3.fromRGB(255, 110, 70), function()
+		toggle(spinPanel)
+	end)
 	iconButton("♻️", "Rebirth", Color3.fromRGB(170, 95, 255), function()
 		toggle(rebirth)
 	end)
@@ -530,6 +590,27 @@ function HUD.Build()
 		lockText.Text = ("🔒 Lock Lv.%d  (%ds%s)"):format(lv + 1, durs[lv + 1] or durs[#durs], if durs[lv + 2] then " → " .. durs[lv + 2] .. "s" else "")
 		lockBtn.Text = if (s.LockCost or -1) < 0 then "MAX" else Format.money(s.LockCost)
 		rebuildFuse(s.Fusable or {})
+		local rw = s.Rewards
+		if rw then
+			spinCap.Text = if rw.SpinIn <= 0 then "SPIN!" else Format.time(rw.SpinIn)
+			spinBtn.Text = if rw.SpinIn <= 0 then "SPIN!" else Format.time(rw.SpinIn)
+			for id, b in potionBtns do
+				if b.Parent and rw.PotionPrices[id] then
+					b.Text = Format.money(rw.PotionPrices[id])
+				end
+			end
+			if rw.CashPotionIn > 0 then
+				income.Text ..= "  🧪x2 " .. Format.time(rw.CashPotionIn)
+			end
+			local g = rw.Gift
+			if not g or g.Done then
+				giftBtn.Visible = false
+			else
+				giftBtn.Visible = true
+				giftBtn.Text = if g.Ready then ("🎁 CLAIM!\n%d/%d"):format(g.Index, g.Total) else ("🎁 %d/%d\n%s"):format(g.Index, g.Total, Format.time(g.ReadyIn))
+				giftBtn.BackgroundColor3 = if g.Ready then Color3.fromRGB(90, 220, 110) else Color3.fromRGB(255, 120, 180)
+			end
+		end
 		speedBtn.Text = if s.SpeedCost < 0 then "MAX" else Format.money(s.SpeedCost)
 		dailyBtn.Text = if s.DailyIn <= 0 then "Claim!" else Format.time(s.DailyIn)
 		rebInfo.Text = ("Rebirths: %d\nCost: %s\nReward: +%d%% cash forever\n(cash, slimes and speed reset)"):format(

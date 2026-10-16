@@ -38,6 +38,9 @@ function EventService:Active()
 	if serverLuckUntil > now then
 		table.insert(result, { Name = "SERVER LUCK x2", Ends = serverLuckUntil, Luck = 2 })
 	end
+	if (self.PotionLuckUntil or 0) > now then
+		table.insert(result, { Name = "🍀 LUCK POTION x1.5", Ends = self.PotionLuckUntil, Luck = 1.5 })
+	end
 	return result
 end
 
@@ -75,6 +78,10 @@ end
 
 function EventService:GetCashMult(): number
 	return product("Cash") * self.S.LiveOpsService.Values.cash
+end
+
+function EventService:AddPotionLuck(seconds: number)
+	self.PotionLuckUntil = math.max(self.PotionLuckUntil or 0, os.time()) + seconds
 end
 
 function EventService:AddServerLuck(seconds: number)

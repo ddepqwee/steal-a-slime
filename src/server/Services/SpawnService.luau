@@ -134,6 +134,12 @@ function SpawnService:TryBuy(player: Player, item)
 		self.S.SocialService:Notify(player, "Base is full! Sell a slime or buy more slots in 🧰 Gear", Color3.fromRGB(255, 120, 120))
 		return
 	end
+	local rdef = Config.Rarities[Pets.ById[item.entry.Id].Rarity]
+	local pdata = self.S.DataService:Get(player)
+	if rdef.RequireRebirth and pdata and pdata.Rebirths < rdef.RequireRebirth then
+		self.S.SocialService:Notify(player, "✨ " .. rdef.Name .. " slimes need Rebirth " .. rdef.RequireRebirth .. "+ to buy!", rdef.Color)
+		return
+	end
 	if not self.S.EconomyService:TrySpend(player, item.price) then
 		self.S.SocialService:Notify(player, "Not enough cash 💸", Color3.fromRGB(255, 120, 120))
 		return

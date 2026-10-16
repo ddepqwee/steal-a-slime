@@ -89,6 +89,7 @@ Config.Rarities = {
 	{ Name = "Legendary", Weight = 18, Color = Color3.fromRGB(255, 170, 0) },
 	{ Name = "Mythic", Weight = 5, Color = Color3.fromRGB(255, 50, 90) },
 	{ Name = "Secret", Weight = 1, Color = Color3.fromRGB(20, 255, 220) },
+	{ Name = "Celestial", Weight = 0.25, Color = Color3.fromRGB(255, 240, 150), RequireRebirth = 3 },
 }
 Config.AnnounceFromRarity = 5 -- с Legendary объявляем на весь сервер
 
@@ -103,7 +104,7 @@ Config.GamePasses = {
 Config.Products = {
 	CashSmall = { Id = 0, Title = "Cash Pack", Desc = "10 minutes of income", Kind = "Cash", Minutes = 10, Min = 1_000, Price = 29 },
 	CashBig = { Id = 0, Title = "Cash Vault", Desc = "1 hour of income", Kind = "Cash", Minutes = 60, Min = 10_000, Price = 129 },
-	LuckySpawn = { Id = 0, Title = "Lucky Spawn", Desc = "Next slime: Legendary 75% · Mythic 20.8% · Secret 4.2% (+GOLD/RAINBOW chance)", Kind = "LuckySpawn", Price = 79 },
+	LuckySpawn = { Id = 0, Title = "Lucky Spawn", Desc = "Next slime: Legendary 74.2% · Mythic 20.6% · Secret 4.1% · Celestial 1% (+mutation chance)", Kind = "LuckySpawn", Price = 79 },
 	ServerLuck = { Id = 0, Title = "Server Luck x2", Desc = "15 min of luck for the whole server", Kind = "ServerLuck", Minutes = 15, Price = 99 },
 }
 
@@ -147,6 +148,41 @@ Config.Quests = {
 }
 Config.QuestRewardMinutes = 8 -- награда = доход за N минут
 Config.QuestRewardMin = 1_000
+
+-- Подарки за время в сессии (минуты). Последний — слайм Epic+.
+Config.PlayGifts = {
+	{ Min = 2, Kind = "Cash", Minutes = 2 },
+	{ Min = 5, Kind = "Cash", Minutes = 4 },
+	{ Min = 10, Kind = "Luck" },
+	{ Min = 15, Kind = "Cash", Minutes = 8 },
+	{ Min = 25, Kind = "Slime", MinRarity = 3 },
+	{ Min = 40, Kind = "Cash", Minutes = 15 },
+	{ Min = 60, Kind = "Slime", MinRarity = 4 },
+}
+Config.GiftCashMin = 300
+
+-- Колесо удачи: бесплатный спин раз в 4 часа
+Config.Spin = {
+	Cooldown = 4 * 60 * 60,
+	Prizes = {
+		{ Kind = "Cash", Minutes = 3, W = 30, Label = "💵 Cash x3m" },
+		{ Kind = "Cash", Minutes = 10, W = 22, Label = "💰 Cash x10m" },
+		{ Kind = "Cash", Minutes = 30, W = 8, Label = "🤑 Cash x30m" },
+		{ Kind = "Luck", W = 15, Label = "🍀 Server Luck" },
+		{ Kind = "CashPotion", W = 12, Label = "🧪 Cash x2" },
+		{ Kind = "Slime", MinRarity = 4, W = 10, Label = "🟣 Epic+ Slime" },
+		{ Kind = "Slime", MinRarity = 5, W = 3, Label = "🟠 Legendary+ Slime" },
+	},
+}
+
+-- Зелья (за игровые деньги, цена зависит от дохода)
+Config.Potions = {
+	{ Id = "Cash", Name = "Cash Potion", Icon = "🧪", Desc = "x2 cash for you · 15 min", Minutes = 15, PriceIncomeSec = 300, PriceMin = 1_500 },
+	{ Id = "Luck", Name = "Server Luck Potion", Icon = "🍀", Desc = "x1.5 luck for everyone · 10 min", Minutes = 10, PriceIncomeSec = 600, PriceMin = 5_000 },
+}
+
+-- 👑 Босс
+Config.Boss = { BaseHP = 40, HPPerPlayer = 25, Duration = 90, ShockEvery = 7, ShockRange = 26, RewardMinutes = 2, RewardMin = 500 }
 
 -- Сезонный ивент: включается/выключается сам по дате (UTC)
 Config.Season = {

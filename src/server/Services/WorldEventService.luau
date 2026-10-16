@@ -332,14 +332,151 @@ function WorldEventService:Raid()
 	end
 end
 
+-- 👑 BOSS: гигантский Slime King. Бонкай всем сервером, пока не кончилось время.
+function WorldEventService:BossHit(player: Player, boss: Model)
+	local st = self.boss
+	if not st or st.model ~= boss or st.dead then
+		return
+	end
+	st.hp -= 1
+	st.damage[player] = (st.damage[player] or 0) + 1
+	st.bar.Size = UDim2.fromScale(math.max(0, st.hp / st.maxHp), 1)
+	st.hpText.Text = ("👑 SLIME KING  %d / %d"):format(math.max(0, st.hp), st.maxHp)
+	local root = boss.PrimaryPart
+	burst(root.Position + Vector3.new(0, root.Size.Y * 0.3, 0), ColorSequence.new(Color3.fromRGB(255, 230, 80), Color3.fromRGB(255, 80, 160)), 12)
+	if st.hp <= 0 then
+		st.dead = true
+	end
+end
+
+function WorldEventService:Boss()
+	local cfg = Config.Boss
+	local count = #Players:GetPlayers()
+	local maxHp = cfg.BaseHP + cfg.HPPerPlayer * count
+	local entry = { Id = "KingGloop", V = "Galaxy" }
+	local model = self.S.PetFactory:Build(entry, { Scale = 5 })
+	local info = model.PrimaryPart:FindFirstChild("Info")
+	if info then
+		info:Destroy()
+	end
+	local pos = Vector3.new(rng:NextNumber(-60, 60), 0, 0)
+	local h = model.PrimaryPart.Size.Y * 0.6
+	model:PivotTo(CFrame.new(pos + Vector3.new(0, h + 120, 0)))
+	model.Parent = folder
+	CollectionService:AddTag(model, "Boss")
+
+	-- полоска HP
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromOffset(360, 56)
+	bb.StudsOffset = Vector3.new(0, h + 6, 0)
+	bb.AlwaysOnTop = true
+	bb.MaxDistance = 600
+	bb.LightInfluence = 0
+	local back = Instance.new("Frame")
+	back.Size = UDim2.new(1, 0, 0.45, 0)
+	back.Position = UDim2.fromScale(0, 0.55)
+	back.BackgroundColor3 = Color3.fromRGB(40, 10, 30)
+	back.Parent = bb
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.fromScale(1, 1)
+	bar.BackgroundColor3 = Color3.fromRGB(255, 60, 90)
+	bar.BorderSizePixel = 0
+	bar.Parent = back
+	local hpText = Instance.new("TextLabel")
+	hpText.BackgroundTransparency = 1
+	hpText.Size = UDim2.new(1, 0, 0.55, 0)
+	hpText.Font = Enum.Font.FredokaOne
+	hpText.TextScaled = true
+	hpText.TextColor3 = Color3.new(1, 1, 1)
+	hpText.TextStrokeTransparency = 0
+	hpText.Text = ("👑 SLIME KING  %d / %d"):format(maxHp, maxHp)
+	hpText.Parent = bb
+	bb.Parent = model.PrimaryPart
+
+	self.boss = { model = model, hp = maxHp, maxHp = maxHp, damage = {}, bar = bar, hpText = hpText, dead = false }
+	self.S.SocialService:NotifyAll("👑 THE SLIME KING has landed! Everyone BONK it together before it escapes!", Color3.fromRGB(255, 200, 60), "Legendary")
+
+	-- приземление
+	local t0 = os.clock()
+	while os.clock() - t0 < 1.2 do
+		local a = (os.clock() - t0) / 1.2
+		model:PivotTo(CFrame.new(pos + Vector3.new(0, h + 120 * (1 - a * a), 0)))
+		task.wait()
+	end
+	model:PivotTo(CFrame.new(pos + Vector3.new(0, h, 0)))
+	burst(pos + Vector3.new(0, 2, 0), ColorSequence.new(Color3.fromRGB(150, 100, 255)), 100)
+
+	-- бой: ударные волны и медленное движение по дороге
+	local start = os.clock()
+	local lastShock = os.clock()
+	local dir = if rng:NextNumber() < 0.5 then -1 else 1
+	while not self.boss.dead and os.clock() - start < cfg.Duration do
+		local dt = task.wait(0.1)
+		pos += Vector3.new(dir * 4 * dt, 0, 0)
+		if math.abs(pos.X) > 140 then
+			dir = -dir
+		end
+		local bob = math.abs(math.sin(os.clock() * 2)) * 2
+		model:PivotTo(CFrame.new(pos + Vector3.new(0, h + bob, 0)) * CFrame.Angles(0, math.sin(os.clock() * 0.7) * 0.5, 0))
+		if os.clock() - lastShock > cfg.ShockEvery then
+			lastShock = os.clock()
+			burst(pos + Vector3.new(0, 2, 0), ColorSequence.new(Color3.fromRGB(255, 80, 120)), 80)
+			for _, p in Players:GetPlayers() do
+				local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+				local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+				if r and hum then
+					local off = (r.Position - pos) * Vector3.new(1, 0, 1)
+					if off.Magnitude < cfg.ShockRange then
+						hum.Sit = true
+						r.AssemblyLinearVelocity = (if off.Magnitude > 0.1 then off.Unit else Vector3.new(1, 0, 0)) * 70 + Vector3.new(0, 45, 0)
+					end
+				end
+			end
+		end
+	end
+
+	local st = self.boss
+	self.boss = nil
+	if st.dead then
+		burst(pos + Vector3.new(0, h, 0), ColorSequence.new(Color3.fromRGB(255, 230, 80), Color3.fromRGB(255, 80, 200)), 200)
+		model:Destroy()
+		-- награды всем участникам, лучшему — Legendary+ слайм
+		local best, bestDmg = nil, 0
+		for p, dmg in st.damage do
+			if p.Parent then
+				if dmg > bestDmg then
+					best, bestDmg = p, dmg
+				end
+				local share = math.clamp(dmg / math.max(1, st.maxHp) * 3, 0.5, 2)
+				local reward = math.floor(math.max(cfg.RewardMin, self.S.EconomyService:GetIncome(p) * 60 * cfg.RewardMinutes * share))
+				self.S.EconomyService:AddCash(p, reward)
+				self.S.SocialService:Notify(p, "👑 Boss defeated! You dealt " .. dmg .. " hits → +" .. Format.money(reward), Color3.fromRGB(255, 220, 90), "Buy")
+				self.S.QuestService:Add(p, "Bonk", dmg)
+			end
+		end
+		if best then
+			local prize = self.S.SpawnService:RollEntry(5, 2)
+			local def = Pets.ById[prize.Id]
+			if self:_grant(best, prize) then
+				self.S.SocialService:NotifyAll("👑 " .. best.DisplayName .. " was the MVP and won a " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. "!", Config.Rarities[def.Rarity].Color, "Legendary")
+			end
+		end
+	else
+		self.S.SocialService:NotifyAll("👑 The Slime King escaped... bonk faster next time!", Color3.fromRGB(220, 180, 255))
+		model:Destroy()
+	end
+end
+
 function WorldEventService:RunRandom()
 	local roll = rng:NextNumber()
-	if roll < 0.4 then
+	if roll < 0.3 then
 		self:Meteor()
-	elseif roll < 0.75 then
+	elseif roll < 0.55 then
 		self:Rain()
-	else
+	elseif roll < 0.8 then
 		self:Raid()
+	else
+		self:Boss()
 	end
 end
 

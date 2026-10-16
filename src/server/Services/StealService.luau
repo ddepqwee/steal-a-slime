@@ -203,6 +203,15 @@ function StealService:Bonk(player: Player, mega: boolean?)
 			end
 		end
 	end
+	for _, boss in CollectionService:GetTagged("Boss") do
+		local bRoot = boss.PrimaryPart
+		if bRoot then
+			local off = (bRoot.Position - root.Position) * Vector3.new(1, 0, 1)
+			if off.Magnitude <= range + bRoot.Size.X * 0.5 then
+				self.S.WorldEventService:BossHit(player, boss)
+			end
+		end
+	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			local oChar = other.Character
