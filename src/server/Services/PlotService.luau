@@ -383,6 +383,83 @@ function PlotService:_tickLocks()
 	end
 end
 
+-- ===== 🎨 Скины базы =====
+local skinById = {}
+for _, sk in Config.BaseSkins do
+	skinById[sk.Id] = sk
+end
+
+local function darker(c: Color3, k: number): Color3
+	return Color3.new(c.R * k, c.G * k, c.B * k)
+end
+
+function PlotService:ApplySkin(plot, skinId: string?)
+	local skin = skinById[skinId or "Default"] or skinById.Default
+	local default = skin.Id == "Default"
+	local main, accent = plot.Theme.Main, plot.Theme.Accent
+	local floorC = if default then darker(main, 0.78) else skin.Floor
+	local tileC = if default then darker(main, 0.9) else skin.Tile
+	local wallC = if default then Color3.fromRGB(235, 235, 245) else skin.Wall
+	local acc = if default then accent else skin.Accent
+	local pedC = if default then Color3.new(1, 1, 1) else skin.Ped
+	local mat = skin.Mat or Enum.Material.SmoothPlastic
+	local rainbow = {}
+	for _, d in plot.Model:GetChildren() do
+		if d:IsA("BasePart") then
+			local n = d.Name
+			if n == "Floor" or n == "Tile" then
+				d.Color = if n == "Floor" then floorC else tileC
+				d.Material = mat
+			elseif n == "Wall" or n == "Post" then
+				d.Color = wallC
+				d.Material = if skin.Mat then mat else Enum.Material.SmoothPlastic
+			elseif n == "Trim" or n == "ArchPost" then
+				d.Color = acc
+				table.insert(rainbow, d)
+			elseif n == "Lamp" and not default then
+				-- у стандартного скина фонари остаются сезонными
+				d.Color = acc
+				local l = d:FindFirstChildOfClass("PointLight")
+				if l then
+					l.Color = acc
+				end
+				table.insert(rainbow, d)
+			elseif string.sub(n, 1, 8) == "Pedestal" then
+				d.Color = pedC
+				d.Material = skin.PedMat or Enum.Material.Marble
+				d:SetAttribute("Accent", acc)
+			end
+		end
+	end
+	plot.RainbowParts = if skin.Rainbow then rainbow else nil
+	local owner = plot.Owner
+	local data = owner and self.S.DataService:Get(owner)
+	for i in plot.Pedestals do
+		self:_stylePed(plot, tostring(i), data and data.Pets[tostring(i)] or nil)
+	end
+end
+
+function PlotService:BuySkin(player: Player, id: any)
+	local data = self.S.DataService:Get(player)
+	local skin = skinById[id]
+	local plot = plotOf[player]
+	if not data or not skin or not plot then
+		return
+	end
+	data.Skins = data.Skins or {}
+	if skin.Price > 0 and not data.Skins[skin.Id] then
+		if not self.S.EconomyService:TrySpend(player, skin.Price) then
+			self.S.SocialService:Notify(player, "You need " .. Format.money(skin.Price), Color3.fromRGB(255, 120, 120))
+			return
+		end
+		data.Skins[skin.Id] = true
+		self.S.AnalyticsHub:Spend(player, skin.Price, "Skin_" .. skin.Id)
+		self.S.SocialService:Notify(player, "🎨 New base skin: " .. skin.Name .. "!", Color3.fromRGB(140, 255, 160), "Buy")
+	end
+	data.Skin = skin.Id
+	self:ApplySkin(plot, skin.Id)
+end
+
 function PlotService:_assign(player: Player)
 	for _, plot in self.Plots do
 		if not plot.Owner then
@@ -411,6 +488,7 @@ function PlotService:_release(player: Player)
 	plot.Model:SetAttribute("OwnerUserId", nil)
 	self:_setSign(plot, "Free Base")
 	plotOf[player] = nil
+	self:ApplySkin(plot, "Default")
 end
 
 function PlotService:Start()
@@ -433,6 +511,8 @@ function PlotService:Start()
 			player:Kick("Server is full, try another one 🙏")
 			return
 		end
+		local d = self.S.DataService:Get(player)
+		self:ApplySkin(plot, d and d.Skin or "Default")
 		self:RenderAll(player)
 		self:RefreshTrap(player)
 		local function onChar(char)
@@ -452,6 +532,25 @@ function PlotService:Start()
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		self:_release(player)
+	end)
+
+	-- 🌈 переливающиеся скины
+	task.spawn(function()
+		while true do
+			local c = Color3.fromHSV((os.clock() * 0.12) % 1, 0.85, 1)
+			for _, plot in self.Plots do
+				if plot.RainbowParts then
+					for _, p in plot.RainbowParts do
+						p.Color = c
+						local l = p:FindFirstChildOfClass("PointLight")
+						if l then
+							l.Color = c
+						end
+					end
+				end
+			end
+			task.wait(0.1)
+		end
 	end)
 
 	while true do

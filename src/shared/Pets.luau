@@ -94,6 +94,17 @@ Pets.List = {
 	{ Id = "GhostlyGoo", Name = "Ghostly Goo", Rarity = 4, Price = 200_000, Income = 1_600, Color = Color3.fromRGB(235, 240, 255), Size = 3.9, Event = "Halloween", Ghost = true },
 	{ Id = "PumpkinPete", Name = "Pumpkin Pete", Rarity = 5, Price = 4_000_000, Income = 20_000, Color = Color3.fromRGB(255, 120, 20), Size = 4.5, Event = "Halloween", Pumpkin = true },
 	{ Id = "WitchyWobble", Name = "Witchy Wobble", Rarity = 6, Price = 40_000_000, Income = 130_000, Color = Color3.fromRGB(120, 40, 180), Size = 5.0, Event = "Halloween", WitchHat = true, Sparkle = true },
+	-- ❄️ Winter (Event = "Winter")
+	{ Id = "Snowball", Name = "Snowball", Rarity = 3, Price = 18_000, Income = 240, Color = Color3.fromRGB(245, 250, 255), Size = 3.3, Event = "Winter", Scarf = true },
+	{ Id = "Gingerbread", Name = "Gingerbread Goo", Rarity = 4, Price = 230_000, Income = 1_800, Color = Color3.fromRGB(190, 120, 60), Size = 3.9, Event = "Winter", Bow = true },
+	{ Id = "JingleJelly", Name = "Jingle Jelly", Rarity = 5, Price = 4_500_000, Income = 23_000, Color = Color3.fromRGB(230, 50, 70), Size = 4.5, Event = "Winter", SantaHat = true, Sparkle = true },
+	{ Id = "YetiBlob", Name = "Yeti Blob", Rarity = 6, Price = 45_000_000, Income = 150_000, Color = Color3.fromRGB(225, 235, 255), Size = 5.1, Event = "Winter", Horns = true, Scarf = true },
+	{ Id = "Aurora", Name = "Aurora", Rarity = 7, Price = 700_000_000, Income = 1_900_000, Color = Color3.fromRGB(90, 255, 200), Size = 5.7, Event = "Winter", Neon = true, Halo = true, Sparkle = true, SantaHat = true },
+
+	-- 🌟 Эксклюзивы (не выпадают нигде, только награды)
+	{ Id = "Streaky", Name = "Streaky", Rarity = 5, Price = 5_000_000, Income = 30_000, Color = Color3.fromRGB(255, 210, 60), Size = 4.6, Exclusive = true, Crown = true, Sparkle = true, Shades = true },
+	{ Id = "Champion", Name = "The Champion", Rarity = 7, Price = 2_000_000_000, Income = 5_000_000, Color = Color3.fromRGB(255, 200, 40), Size = 6.2, Exclusive = true, Crown = true, Wings = true, Neon = true, Sparkle = true },
+
 	-- 🌙 Moon slimes (Night = true: появляются только ночью)
 	{ Id = "Moonpup", Name = "Moonpup", Rarity = 2, Price = 2_000, Income = 40, Color = Color3.fromRGB(190, 200, 255), Size = 3.0, Night = true, Antenna = true },
 	{ Id = "Starglow", Name = "Starglow", Rarity = 3, Price = 25_000, Income = 330, Color = Color3.fromRGB(255, 240, 140), Size = 3.4, Night = true, Neon = true, Sparkle = true },
@@ -122,8 +133,8 @@ end
 function Pets.Pool(rarity: number, activeEvent: string?, eventChance: number, roll: number, zone: string?, zoneChance: number?, zoneRoll: number?)
 	local normal, event, zonal = {}, {}, {}
 	for _, p in Pets.ByRarity[rarity] or {} do
-		if p.Night then
-			continue -- ночные слаймы выбираются отдельно (SpawnService)
+		if p.Night or p.Exclusive then
+			continue -- ночные выбираются отдельно (SpawnService), эксклюзивы — только награды
 		elseif p.Zone ~= nil then
 			if p.Zone == zone then
 				table.insert(zonal, p)

@@ -44,6 +44,17 @@ function RewardService:_grant(player: Player, prize): string
 		end
 		-- нет места — компенсируем деньгами
 		return "+" .. Format.money(self:_cash(player, 10)) .. " (base full)"
+	elseif prize.Kind == "Pet" then
+		local def = Pets.ById[prize.Id]
+		if def and self:_giveSlime(player, { Id = def.Id }) then
+			return "🌟 " .. def.Name .. "!"
+		end
+		return "+" .. Format.money(self:_cash(player, 60)) .. " (base full)"
+	elseif prize.Kind == "Tokens" then
+		local data = self.S.DataService:Get(player)
+		data.Tokens = (data.Tokens or 0) + (prize.N or 1)
+		self.S.IndexService:SendMeta(player)
+		return "🔮 +" .. (prize.N or 1) .. " token, +" .. Format.money(self:_cash(player, prize.Minutes or 10))
 	end
 	return ""
 end
@@ -87,6 +98,7 @@ function RewardService:Hatch(player: Player, eggId: any)
 		return
 	end
 	self.S.DataService:Stat(player, "Hatched")
+	self.S.AnalyticsHub:Spend(player, egg.Price, "Egg_" .. egg.Id)
 	RewardRemote:FireClient(player, "Hatch", { Id = entry.Id, V = entry.V, Egg = egg.Id })
 	if def.Rarity >= 6 then
 		task.delay(2.2, function()
@@ -130,6 +142,44 @@ function RewardService:Redeem(player: Player, raw: any)
 	end
 	data.Codes[code] = true
 	self.S.SocialService:Notify(player, "🎟️ Code " .. code .. " redeemed: " .. text, Color3.fromRGB(140, 255, 160), "Buy")
+end
+
+-- ===== 📅 Календарь входа (7 дней) =====
+-- DailyStreak — сколько дней подряд забрано; пропуск больше окна → начинаем с 1-го дня.
+function RewardService:CalendarInfo(data)
+	local now = os.time()
+	local since = now - (data.LastDaily or 0)
+	local broken = (data.DailyStreak or 0) == 0 or since >= Config.DailyCooldown * 2.4
+	local streak = if broken then 0 else data.DailyStreak
+	return {
+		Next = (streak % #Config.Calendar) + 1,
+		ReadyIn = math.max(0, (data.LastDaily or 0) + Config.DailyCooldown - now),
+		Week = streak // #Config.Calendar + 1,
+		Streak = streak,
+	}
+end
+
+function RewardService:ClaimCalendar(player: Player)
+	local data = self.S.DataService:Get(player)
+	if not data then
+		return
+	end
+	local info = self:CalendarInfo(data)
+	if info.ReadyIn > 0 then
+		self.S.SocialService:Notify(player, "📅 Next reward in " .. Format.time(info.ReadyIn), Color3.fromRGB(255, 200, 120))
+		return
+	end
+	local day = info.Next
+	local prize = Config.Calendar[day]
+	data.DailyStreak = info.Streak + 1
+	data.LastDaily = os.time()
+	local text = self:_grant(player, prize)
+	self.S.SocialService:Notify(player, ("📅 Day %d reward: %s  Come back tomorrow!"):format(day, text), Color3.fromRGB(255, 220, 90), "Buy")
+	if day == #Config.Calendar then
+		self.S.SocialService:NotifyAll("🌟 " .. player.DisplayName .. " logged in 7 days in a row and got STREAKY!", Color3.fromRGB(255, 210, 60), "Legendary")
+	end
+	self.S.AnalyticsHub:Custom(player, "CalendarClaim", day)
+	self.S.EconomyService:Refresh(player)
 end
 
 -- ===== Подарки за время =====
@@ -228,6 +278,7 @@ function RewardService:StateFor(player: Player, data)
 		SpinIn = self:SpinReadyIn(data),
 		CashPotionIn = math.max(0, (data.CashPotionUntil or 0) - os.time()),
 		PotionPrices = prices,
+		Calendar = self:CalendarInfo(data),
 	}
 end
 

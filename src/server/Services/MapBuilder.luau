@@ -320,6 +320,7 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 
 	local plot = {
 		PedFx = pedFx,
+		Theme = { Main = main, Accent = accent },
 		TrapPad = trapPad,
 		Index = index,
 		CFrame = cf,
@@ -388,6 +389,13 @@ function MapBuilder:_board()
 	gui2.Parent = board2
 	self.StealsLabel = gui2:FindFirstChild("List")
 	self.StealsLabel.Text = "🦹 TOP THIEVES\n..."
+
+	local board3 = part({ Name = "WeeklyBoard", Size = Vector3.new(1, 22, 30), Position = Vector3.new(self.RoadEnd.X + 26, 13, -36), Color = Color3.fromRGB(30, 50, 80) })
+	part({ Name = "BoardFrame", Size = Vector3.new(1.2, 23, 31), Position = board3.Position + Vector3.new(0.2, 0, 0), Color = Color3.fromRGB(80, 200, 255), Material = Enum.Material.Neon })
+	local gui3 = gui:Clone()
+	gui3.Parent = board3
+	self.WeeklyLabel = gui3:FindFirstChild("List")
+	self.WeeklyLabel.Text = "📅 WEEKLY RACE\n..."
 end
 
 -- 🎃 Хэллоуин: закатный свет, тыквы, оранжевые фонари, летучие мыши
@@ -448,6 +456,88 @@ function MapBuilder:_halloween()
 	end
 	local sign = part({ Name = "HalloweenSign", Size = Vector3.new(1, 1, 1), Position = Vector3.new(self.RoadStart.X - 2, 37, 0), Transparency = 1, CanCollide = false })
 	label(sign, "🎃 HALLOWEEN EVENT 🎃", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(255, 150, 40))
+end
+
+-- ❄️ Зима: снежный остров, ёлки с гирляндами, снеговики, голубые фонари (снегопад — на клиенте)
+local function xmasTree(pos: Vector3, h: number, rng: Random)
+	part({ Name = "TreeTrunk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h * 0.2, h * 0.12, h * 0.12), CFrame = CFrame.new(pos + Vector3.new(0, h * 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(110, 70, 40), Material = Enum.Material.Wood })
+	local tiers = 4
+	local LIGHTS = { Color3.fromRGB(255, 60, 60), Color3.fromRGB(255, 220, 60), Color3.fromRGB(80, 160, 255), Color3.fromRGB(255, 90, 220) }
+	for i = 1, tiers do
+		local d = h * (0.62 - (i - 1) * 0.13)
+		local y = h * (0.2 + (i - 1) * 0.18)
+		part({ Name = "TreeTier", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h * 0.2, d, d), CFrame = CFrame.new(pos + Vector3.new(0, y + h * 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(40, 140, 75), Material = Enum.Material.Grass, CanCollide = i == 1 })
+		-- снег на ярусе
+		part({ Name = "TreeSnow", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h * 0.03, d * 0.8, d * 0.8), CFrame = CFrame.new(pos + Vector3.new(0, y + h * 0.2 + h * 0.015, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(250, 252, 255), CanCollide = false })
+		for k = 1, 5 do
+			local a = (k / 5) * math.pi * 2 + i
+			part({ Name = "TreeLight", Shape = Enum.PartType.Ball, Size = Vector3.new(h * 0.06, h * 0.06, h * 0.06), Position = pos + Vector3.new(math.cos(a) * d * 0.5, y + h * 0.06, math.sin(a) * d * 0.5), Color = LIGHTS[rng:NextInteger(1, #LIGHTS)], Material = Enum.Material.Neon, CanCollide = false, CastShadow = false })
+		end
+	end
+	local star = part({ Name = "TreeStar", Shape = Enum.PartType.Ball, Size = Vector3.new(h * 0.14, h * 0.14, h * 0.14), Position = pos + Vector3.new(0, h * 0.98, 0), Color = Color3.fromRGB(255, 225, 80), Material = Enum.Material.Neon, CanCollide = false })
+	local l = Instance.new("PointLight")
+	l.Color = Color3.fromRGB(255, 220, 120)
+	l.Range = h * 1.2
+	l.Brightness = 1.5
+	l.Parent = star
+end
+
+local function snowman(pos: Vector3, s: number, yaw: number)
+	local cf = CFrame.new(pos) * CFrame.Angles(0, yaw, 0)
+	local white = Color3.fromRGB(248, 250, 255)
+	part({ Name = "Snowman", Shape = Enum.PartType.Ball, Size = Vector3.one * s * 1.6, CFrame = cf * CFrame.new(0, s * 0.75, 0), Color = white })
+	part({ Name = "Snowman", Shape = Enum.PartType.Ball, Size = Vector3.one * s * 1.15, CFrame = cf * CFrame.new(0, s * 1.95, 0), Color = white })
+	part({ Name = "Snowman", Shape = Enum.PartType.Ball, Size = Vector3.one * s * 0.8, CFrame = cf * CFrame.new(0, s * 2.85, 0), Color = white })
+	for _, x in { -0.15, 0.15 } do
+		part({ Name = "SnowmanEye", Shape = Enum.PartType.Ball, Size = Vector3.one * s * 0.12, CFrame = cf * CFrame.new(x * s, s * 2.95, -s * 0.36), Color = Color3.fromRGB(20, 20, 25), CanCollide = false })
+	end
+	part({ Name = "SnowmanNose", Shape = Enum.PartType.Cylinder, Size = Vector3.new(s * 0.45, s * 0.1, s * 0.1), CFrame = cf * CFrame.new(0, s * 2.82, -s * 0.5) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(255, 130, 30), CanCollide = false })
+	part({ Name = "SnowmanHat", Shape = Enum.PartType.Cylinder, Size = Vector3.new(s * 0.08, s * 0.9, s * 0.9), CFrame = cf * CFrame.new(0, s * 3.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(30, 30, 35), CanCollide = false })
+	part({ Name = "SnowmanHat", Shape = Enum.PartType.Cylinder, Size = Vector3.new(s * 0.5, s * 0.55, s * 0.55), CFrame = cf * CFrame.new(0, s * 3.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(30, 30, 35), CanCollide = false })
+	part({ Name = "SnowmanScarf", Shape = Enum.PartType.Cylinder, Size = Vector3.new(s * 0.18, s * 0.85, s * 0.85), CFrame = cf * CFrame.new(0, s * 2.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(230, 40, 60), CanCollide = false })
+end
+
+function MapBuilder:_winter()
+	local rng = Random.new(77)
+	local ground = mapFolder:FindFirstChild("Ground")
+	if ground and ground:IsA("BasePart") then
+		ground.Color = Color3.fromRGB(235, 242, 252)
+		ground.Material = Enum.Material.Snow
+	end
+	-- ёлки вдоль дороги и в поле
+	for x = -182, 182, 52 do
+		for _, side in { -1, 1 } do
+			xmasTree(Vector3.new(x + rng:NextNumber(-4, 4), 0, side * 19), rng:NextNumber(9, 12), rng)
+		end
+	end
+	for _ = 1, 26 do
+		local pos = Vector3.new(rng:NextNumber(-270, 270), 0, rng:NextNumber(-210, 210))
+		if not (math.abs(pos.X) < 240 and math.abs(pos.Z) < 110) then
+			xmasTree(pos, rng:NextNumber(14, 24), rng)
+		end
+	end
+	for _ = 1, 10 do
+		local pos = Vector3.new(rng:NextNumber(-250, 250), 0, (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(112, 170))
+		snowman(pos, rng:NextNumber(1.6, 2.4), rng:NextNumber(0, math.pi * 2))
+	end
+	-- сугробы
+	for _ = 1, 40 do
+		local w = rng:NextNumber(5, 11)
+		part({ Name = "SnowPile", Shape = Enum.PartType.Ball, Size = Vector3.new(w, w * 0.35, w), Position = Vector3.new(rng:NextNumber(-280, 280), 0, rng:NextNumber(-215, 215)), Color = Color3.fromRGB(250, 252, 255), Material = Enum.Material.Snow, CanCollide = false })
+	end
+	-- фонари баз — ледяные
+	for _, d in mapFolder:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "Lamp" then
+			d.Color = Color3.fromRGB(160, 225, 255)
+			local l = d:FindFirstChildOfClass("PointLight")
+			if l then
+				l.Color = Color3.fromRGB(170, 220, 255)
+				l.Range = 22
+			end
+		end
+	end
+	local sign = part({ Name = "WinterSign", Size = Vector3.new(1, 1, 1), Position = Vector3.new(self.RoadStart.X - 2, 37, 0), Transparency = 1, CanCollide = false })
+	label(sign, "❄️ WINTER EVENT ❄️", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(160, 225, 255))
 end
 
 -- 🌍 Острова ребёртов: отдельные острова со своими дорогами, видны с главного острова
@@ -663,10 +753,11 @@ function MapBuilder:Init()
 	self:_board()
 	self:_zones()
 	self:_obby()
-	local season = Config.Season
-	local now = os.time()
-	if season and season.Name == "Halloween" and now >= season.Start and now < season.End then
+	local season = Config.ActiveSeason()
+	if season and season.Name == "Halloween" then
 		self:_halloween()
+	elseif season and season.Name == "Winter" then
+		self:_winter()
 	end
 end
 

@@ -36,6 +36,7 @@ Config.RainbowChance = 0.005 -- x8 дохода
 Config.Variants = {
 	Gold = { Mult = 3, Color = Color3.fromRGB(255, 200, 40), Label = "GOLD", Icon = "🟡" },
 	Candy = { Mult = 4, Color = Color3.fromRGB(255, 130, 200), Label = "CANDY", Icon = "🍬", Season = "Halloween" },
+	Frosty = { Mult = 4, Color = Color3.fromRGB(150, 225, 255), Label = "FROSTY", Icon = "❄️", Season = "Winter" },
 	Diamond = { Mult = 5, Color = Color3.fromRGB(120, 230, 255), Label = "DIAMOND", Icon = "💎" },
 	Rainbow = { Mult = 8, Color = Color3.fromRGB(255, 80, 200), Label = "RAINBOW", Icon = "🌈" },
 	Galaxy = { Mult = 12, Color = Color3.fromRGB(70, 30, 140), Label = "GALAXY", Icon = "🌌" },
@@ -45,6 +46,7 @@ Config.VariantRoll = {
 	{ V = "Rainbow", Chance = 0.005, Luck = true },
 	{ V = "Diamond", Chance = 0.015 },
 	{ V = "Candy", Chance = 0.03 },
+	{ V = "Frosty", Chance = 0.03 },
 	{ V = "Gold", Chance = 0.04, Gold = true },
 }
 
@@ -258,16 +260,78 @@ Config.Potions = {
 Config.Boss = { BaseHP = 40, HPPerPlayer = 25, Duration = 90, ShockEvery = 7, ShockRange = 26, RewardMinutes = 2, RewardMin = 500 }
 
 -- Сезонный ивент: включается/выключается сам по дате (UTC)
-Config.Season = {
-	Name = "Halloween",
-	Title = "🎃 HALLOWEEN EVENT",
-	Start = 1792108800, -- 2026-10-16
-	End = 1793664000, -- 2026-11-03
-	EventPetChance = 0.35, -- шанс, что выпадет ивентовый слайм этой редкости
-	SpookyEveryHours = 2,
-	SpookyMinute = 15,
-	SpookyDuration = 10,
-	SpookyMult = 3,
+-- 🗓️ Сезонные ивенты: включаются и выключаются сами по датам (UTC). Name совпадает с Event у слаймов.
+Config.Seasons = {
+	{
+		Name = "Halloween",
+		Title = "🎃 HALLOWEEN EVENT",
+		Icon = "🎃",
+		Start = 1792108800, -- 2026-10-16
+		End = 1793664000, -- 2026-11-03
+		EventPetChance = 0.35, -- шанс, что выпадет ивентовый слайм этой редкости
+		HourName = "👻 SPOOKY HOUR",
+		HourEvery = 2,
+		HourMinute = 15,
+		HourDuration = 10,
+		HourMult = 3,
+	},
+	{
+		Name = "Winter",
+		Title = "❄️ WINTER EVENT",
+		Icon = "❄️",
+		Start = 1793664000, -- 2026-11-03
+		End = 1799366400, -- 2027-01-09
+		EventPetChance = 0.35,
+		HourName = "🌨️ BLIZZARD HOUR",
+		HourEvery = 2,
+		HourMinute = 15,
+		HourDuration = 10,
+		HourMult = 3,
+	},
+}
+function Config.ActiveSeason(now: number?)
+	local t = now or os.time()
+	for _, s in Config.Seasons do
+		if t >= s.Start and t < s.End then
+			return s
+		end
+	end
+	return nil
+end
+
+-- 📅 Календарь входа: 7 дней, награды растут, 7-й день — эксклюзивный слайм. Потом новая неделя.
+Config.Calendar = {
+	{ Kind = "Cash", Minutes = 5, Label = "💵 Cash", Sub = "5 min" },
+	{ Kind = "Cash", Minutes = 10, Label = "💰 Cash", Sub = "10 min" },
+	{ Kind = "CashPotion", Label = "🧪 x2 Cash", Sub = "15 min" },
+	{ Kind = "Cash", Minutes = 20, Label = "🤑 Cash", Sub = "20 min" },
+	{ Kind = "Slime", MinRarity = 4, Label = "🟣 Slime", Sub = "Epic+" },
+	{ Kind = "Tokens", N = 1, Minutes = 30, Label = "🔮 Token", Sub = "+30 min cash" },
+	{ Kind = "Pet", Id = "Streaky", Label = "🌟 STREAKY", Sub = "Exclusive!" },
+}
+
+-- 🏆 Недельный топ: неделя с понедельника 00:00 UTC. Топ-3 — эксклюзивный слайм + титул, топ-10 — деньги.
+Config.Weekly = { Store = "WeeklyEarned_v1_", PetId = "Champion", TitleTop = 3, CashTop = 10, CashMinutes = 60 }
+function Config.WeekIndex(t: number?): number
+	return ((t or os.time()) + 3 * 86400) // 604800
+end
+function Config.WeekEnds(): number
+	return (Config.WeekIndex() + 1) * 604800 - 3 * 86400
+end
+
+-- 💎 Бонус для Roblox Premium (Roblox платит за время Premium-игроков в игре)
+Config.PremiumBonus = 0.1
+
+-- 🎨 Скины базы (за игровые деньги, навсегда)
+Config.BaseSkins = {
+	{ Id = "Default", Name = "Classic", Icon = "🏠", Price = 0 },
+	{ Id = "Candy", Name = "Candy Land", Icon = "🍭", Price = 50_000, Floor = Color3.fromRGB(255, 190, 225), Tile = Color3.fromRGB(255, 245, 250), Wall = Color3.fromRGB(255, 255, 255), Accent = Color3.fromRGB(255, 80, 170), Ped = Color3.fromRGB(255, 225, 240) },
+	{ Id = "Midnight", Name = "Midnight", Icon = "🌃", Price = 750_000, Floor = Color3.fromRGB(25, 25, 55), Tile = Color3.fromRGB(40, 40, 85), Wall = Color3.fromRGB(30, 30, 50), Accent = Color3.fromRGB(150, 90, 255), Ped = Color3.fromRGB(60, 60, 100), PedMat = Enum.Material.Slate },
+	{ Id = "Gold", Name = "Gold Vault", Icon = "🪙", Price = 10_000_000, Floor = Color3.fromRGB(230, 180, 60), Tile = Color3.fromRGB(255, 215, 100), Wall = Color3.fromRGB(255, 200, 70), Accent = Color3.fromRGB(255, 255, 220), Ped = Color3.fromRGB(255, 210, 80), Mat = Enum.Material.Metal, PedMat = Enum.Material.Metal },
+	{ Id = "Lava", Name = "Lava Forge", Icon = "🌋", Price = 150_000_000, Floor = Color3.fromRGB(45, 30, 30), Tile = Color3.fromRGB(70, 40, 35), Wall = Color3.fromRGB(35, 25, 25), Accent = Color3.fromRGB(255, 100, 20), Ped = Color3.fromRGB(60, 40, 40), Mat = Enum.Material.Basalt, PedMat = Enum.Material.Basalt },
+	{ Id = "Ice", Name = "Ice Palace", Icon = "🧊", Price = 2_000_000_000, Floor = Color3.fromRGB(190, 230, 255), Tile = Color3.fromRGB(230, 248, 255), Wall = Color3.fromRGB(210, 240, 255), Accent = Color3.fromRGB(80, 220, 255), Ped = Color3.fromRGB(220, 245, 255), Mat = Enum.Material.Glacier, PedMat = Enum.Material.Ice },
+	{ Id = "Galaxy", Name = "Galaxy", Icon = "🌌", Price = 30_000_000_000, Floor = Color3.fromRGB(20, 10, 45), Tile = Color3.fromRGB(45, 20, 90), Wall = Color3.fromRGB(25, 15, 55), Accent = Color3.fromRGB(255, 90, 230), Ped = Color3.fromRGB(70, 40, 140), PedMat = Enum.Material.Glass },
+	{ Id = "Rainbow", Name = "Rainbow", Icon = "🌈", Price = 500_000_000_000, Floor = Color3.fromRGB(250, 250, 255), Tile = Color3.fromRGB(235, 235, 250), Wall = Color3.fromRGB(255, 255, 255), Accent = Color3.fromRGB(255, 0, 0), Ped = Color3.fromRGB(255, 255, 255), Rainbow = true },
 }
 
 -- LiveOps: удалённое управление через Open Cloud (DataStore + MessagingService)

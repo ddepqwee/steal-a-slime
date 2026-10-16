@@ -115,6 +115,7 @@ function MonetizationService:_processReceipt(receipt)
 		table.remove(data.Receipts, 1)
 	end
 	self.S.DataService:Save(player, false)
+	self.S.AnalyticsHub:Robux(player, name, receipt.CurrencySpent or info.Price)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
@@ -127,6 +128,7 @@ function MonetizationService:Start()
 		local name = passById[passId]
 		if purchased and name then
 			setOwned(player, name)
+			self.S.AnalyticsHub:Robux(player, name, Config.GamePasses[name].Price)
 			self.S.EconomyService:Refresh(player)
 			self.S.ProgressionService:ApplySpeed(player)
 			self.S.PlotService:RefreshSlots(player)

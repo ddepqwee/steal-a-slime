@@ -63,6 +63,9 @@ function EconomyService:_compute(player: Player)
 	if self.S.MonetizationService:HasPass(player, "VIP") then
 		mult *= 1.2
 	end
+	if player.MembershipType == Enum.MembershipType.Premium then
+		mult *= 1 + Config.PremiumBonus
+	end
 	mult *= 1 + (tonumber(player:GetAttribute("FriendBoost")) or 0)
 	if player:GetAttribute("InGroup") then
 		mult *= 1 + Config.GroupIncomeBonus
@@ -94,6 +97,12 @@ function EconomyService:AddCash(player: Player, amount: number)
 	data.Cash += amount
 	if amount > 0 then
 		data.TotalEarned += amount
+		local w = Config.WeekIndex()
+		if data.WeekId ~= w then
+			data.WeekId = w
+			data.WeekEarned = 0
+		end
+		data.WeekEarned = (data.WeekEarned or 0) + amount
 	end
 	self:_leaderstats(player, data)
 end
@@ -168,10 +177,17 @@ function EconomyService:SendState(player: Player)
 		DailyIn = math.max(0, (data.LastDaily + Config.DailyCooldown) - now),
 		Streak = data.DailyStreak,
 		Steals = data.Steals,
+		Premium = player.MembershipType == Enum.MembershipType.Premium,
+		Skin = data.Skin or "Default",
+		Skins = data.Skins or {},
 	})
 end
 
 function EconomyService:Start()
+	game:GetService("Players").PlayerMembershipChanged:Connect(function(player)
+		self:Refresh(player)
+		self.S.ZoneService:UpdateTitle(player)
+	end)
 	self.S.DataService:OnLoaded(function(player, data)
 		local ls = Instance.new("Folder")
 		ls.Name = "leaderstats"

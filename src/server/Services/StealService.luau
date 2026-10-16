@@ -119,6 +119,7 @@ function StealService:_finish(thief: Player, success: boolean)
 		end
 		self.S.QuestService:Add(thief, "Steal", 1)
 		self.S.TutorialService:Advance(thief, "Steal")
+		self.S.AnalyticsHub:Custom(thief, "Steal", 1)
 		self.S.AchievementService:Check(thief)
 		local def = Pets.ById[c.entry.Id]
 		self.S.SocialService:NotifyAll("🦹 " .. thief.DisplayName .. " stole " .. def.Name .. " from " .. c.victim.DisplayName .. "!", Color3.fromRGB(255, 160, 60))

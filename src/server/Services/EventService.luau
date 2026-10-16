@@ -27,8 +27,8 @@ function EventService:Active()
 	local season = self:Season()
 	if season then
 		table.insert(result, { Name = season.Title, Ends = season.End })
-		if hourIndex % season.SpookyEveryHours == 0 and minute >= season.SpookyMinute and minute < season.SpookyMinute + season.SpookyDuration then
-			table.insert(result, { Name = "👻 SPOOKY HOUR x" .. season.SpookyMult, Ends = hourIndex * 3600 + (season.SpookyMinute + season.SpookyDuration) * 60, Season = season.SpookyMult })
+		if hourIndex % season.HourEvery == 0 and minute >= season.HourMinute and minute < season.HourMinute + season.HourDuration then
+			table.insert(result, { Name = season.HourName .. " x" .. season.HourMult, Ends = hourIndex * 3600 + (season.HourMinute + season.HourDuration) * 60, Season = season.HourMult })
 		end
 	end
 	local live = self.S.LiveOpsService.Values
@@ -55,12 +55,7 @@ local function product(field)
 end
 
 function EventService:Season()
-	local s = Config.Season
-	local now = os.time()
-	if s and now >= s.Start and now < s.End then
-		return s
-	end
-	return nil
+	return Config.ActiveSeason()
 end
 
 -- Множитель шанса ивентовых слаймов (Spooky Hour)
@@ -107,6 +102,8 @@ function EventService:Start()
 			end
 			lastText = text
 		end
+		local season = self:Season()
+		ReplicatedStorage:SetAttribute("Season", season and season.Name or "")
 		ReplicatedStorage:SetAttribute("EventText", text)
 		ReplicatedStorage:SetAttribute("EventEnds", ends)
 		task.wait(1)

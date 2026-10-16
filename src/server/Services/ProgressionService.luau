@@ -288,6 +288,7 @@ function ProgressionService:Rebirth(player: Player)
 	self.S.SocialService:Notify(player, "🔮 +1 Rebirth Token! Spend it on permanent perks in ♻️ Rebirth", Color3.fromRGB(200, 160, 255))
 	self.S.AchievementService:Check(player)
 	self.S.IndexService:SendMeta(player)
+	self.S.AnalyticsHub:Rebirth(player, data.Rebirths)
 	self.S.DataService:Save(player, false)
 end
 
@@ -303,7 +304,7 @@ function ProgressionService:Start()
 		elseif action == "Rebirth" then
 			self:Rebirth(player)
 		elseif action == "Daily" then
-			self.S.SocialService:ClaimDaily(player)
+			self.S.RewardService:ClaimCalendar(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
 		elseif action == "TutSkip" then
@@ -336,6 +337,8 @@ function ProgressionService:Start()
 			self:BuySlot(player)
 		elseif action == "BuyGear" then
 			self.S.GearService:Buy(player, arg)
+		elseif action == "Skin" then
+			self.S.PlotService:BuySkin(player, arg)
 		elseif action == "ClaimQuest" then
 			self.S.QuestService:Claim(player, arg)
 		end

@@ -32,12 +32,14 @@ end
 function TutorialService:_next(player: Player, data, rewarded: boolean)
 	local step = self.Steps[data.Tutorial]
 	if rewarded and step then
+		self.S.AnalyticsHub:Step(player, data.Tutorial + 1)
 		self.S.EconomyService:AddCash(player, step.Reward)
 		self.S.SocialService:Notify(player, "🎓 Step complete! +" .. Format.money(step.Reward), Color3.fromRGB(140, 255, 160), "Buy")
 	end
 	data.Tutorial += 1
 	if data.Tutorial > #self.Steps then
 		data.Tutorial = DONE
+		self.S.AnalyticsHub:Step(player, 6)
 		self.S.SocialService:Notify(player, "🎓 Tutorial complete! Try 🥚 Eggs, ⚗️ Fuse and rebirth to unlock 🌋 Lava Land!", Color3.fromRGB(255, 220, 90), "Legendary")
 	end
 	self:Send(player)

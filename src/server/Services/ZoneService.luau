@@ -128,7 +128,12 @@ function ZoneService:UpdateTitle(player: Player)
 			break
 		end
 	end
+	-- 🏆 титул чемпиона недели перекрывает остальные (держится всю следующую неделю)
+	if data.ChampionWeek == Config.WeekIndex() and data.ChampionRank then
+		chosen = { Text = "🏆 #" .. data.ChampionRank .. " OF THE WEEK", Color = Color3.fromRGB(255, 215, 60) }
+	end
 	local vip = self.S.MonetizationService:HasPass(player, "VIP")
+	local premium = player.MembershipType == Enum.MembershipType.Premium
 	local bb = head:FindFirstChild("TitleTag")
 	if not bb then
 		bb = Instance.new("BillboardGui")
@@ -147,7 +152,7 @@ function ZoneService:UpdateTitle(player: Player)
 		t.Parent = bb
 		bb.Parent = head
 	end
-	bb.Text.Text = (if vip then "⭐ VIP · " else "") .. chosen.Text
+	bb.Text.Text = (if premium then "💎 " else "") .. (if vip then "⭐ VIP · " else "") .. chosen.Text
 	bb.Text.TextColor3 = chosen.Color
 end
 

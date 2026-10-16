@@ -176,6 +176,26 @@ function PetFactory:Build(entry, opts): Model
 			cyl(model, root, Vector3.new(s * 0.09, s * k, s * k), hatColor, CFrame.new(-lean, s * (0.72 + i * 0.075), 0) * CFrame.Angles(0, 0, math.rad(90)))
 		end
 	end
+	-- 🎅 Шапка Санты: красный конус ярусами + белый мех и помпон
+	if def.SantaHat then
+		local red = Color3.fromRGB(220, 30, 45)
+		local fur = cyl(model, root, Vector3.new(s * 0.14, s * 0.78, s * 0.78), Color3.fromRGB(250, 250, 255), CFrame.new(0, s * 0.6, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		fur.Material = Enum.Material.Fabric
+		local steps = 7
+		for i = 1, steps do
+			local k = 0.68 * (1 - (i - 1) / steps)
+			local lean = (i / steps) ^ 2 * s * 0.28
+			cyl(model, root, Vector3.new(s * 0.1, s * k, s * k), red, CFrame.new(lean, s * (0.68 + i * 0.075), 0) * CFrame.Angles(0, 0, math.rad(90)))
+		end
+		ball(model, root, s * 0.2, Color3.fromRGB(250, 250, 255), CFrame.new(s * 0.3, s * 1.24, 0), Enum.Material.Fabric)
+	end
+	-- 🧣 Шарф
+	if def.Scarf then
+		local sc = cyl(model, root, Vector3.new(s * 0.16, s * 1.02, s * 1.02), Color3.fromRGB(230, 40, 60), CFrame.new(0, -s * 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		sc.Material = Enum.Material.Fabric
+		local tail = cyl(model, root, Vector3.new(s * 0.4, s * 0.14, s * 0.14), Color3.fromRGB(230, 40, 60), CFrame.new(s * 0.25, -s * 0.38, -s * 0.42))
+		tail.Material = Enum.Material.Fabric
+	end
 	-- Корона
 	if def.Crown then
 		local crown = Instance.new("Part")
@@ -309,6 +329,12 @@ function PetFactory:Build(entry, opts): Model
 	end
 	if def.Event == "Halloween" then
 		rarityText = "🎃 " .. rarityText
+	elseif def.Event == "Winter" then
+		rarityText = "❄️ " .. rarityText
+	elseif def.Night then
+		rarityText = "🌙 " .. rarityText
+	elseif def.Exclusive then
+		rarityText = "🌟 EXCLUSIVE " .. rarityText
 	end
 	line("Rarity", rarityText, if variant then variant.Color else rarity.Color, 16)
 	local lvl = entry.L or 1

@@ -539,6 +539,7 @@ function HUD.Build()
 	HUD.Root = root
 	updateScale()
 	local Action = Net.event("Action")
+	local updateCalendar
 
 	-- ---------- Верх: деньги ----------
 	local top = frame(root, { BackgroundTransparency = 0, BackgroundColor3 = WHITE, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.fromOffset(290, 70) })
@@ -639,6 +640,22 @@ function HUD.Build()
 	for key, info in Config.GamePasses do
 		shopCard(passList, key, info, true)
 	end
+	-- 💎 Roblox Premium (+10% в этой игре)
+	local premCard = card(passList, { Height = 136, Color = Color3.fromRGB(90, 200, 255), Icon = "💎", Title = "Roblox Premium", Sub = ("+%d%% cash in this game, every day!"):format(math.floor(Config.PremiumBonus * 100 + 0.5)), TileSize = 108, TitleH = 32, LayoutOrder = 8 })
+	premCard.Sub.Size = UDim2.new(1, -premCard.X - 10, 0, 44)
+	premCard.Sub.Position = UDim2.fromOffset(premCard.X, 40)
+	local premBtn = btn(premCard.Frame, {
+		Text = "Get Premium",
+		Color = C.Blue,
+		Size = UDim2.new(1, -premCard.X - 12, 0, 40),
+		Position = UDim2.new(0, premCard.X, 1, -50),
+		TextSize = 20,
+		OnClick = function()
+			if player.MembershipType ~= Enum.MembershipType.Premium then
+				pcall(MarketplaceService.PromptPremiumPurchase, MarketplaceService, player)
+			end
+		end,
+	})
 	for key, info in Config.Products do
 		shopCard(boostList, key, info, false)
 	end
@@ -788,6 +805,52 @@ function HUD.Build()
 	end)
 	buddyCard.Title.Text = "Buddy Slime"
 	buddyCard.Sub.Text = "Your best slime follows you around"
+	header(baseList, "🎨 Base Skins", 10, C.Pink)
+	local skinKey = ""
+	local skinCards = {}
+	local function rebuildSkins(s)
+		local key = (s.Skin or "") .. "|"
+		for id in s.Skins or {} do
+			key ..= id .. ","
+		end
+		if key == skinKey then
+			for _, sc in skinCards do
+				if sc.buy then
+					sc.buy.SetColor(if s.Cash >= sc.skin.Price then C.Green else Color3.fromRGB(150, 140, 170))
+				end
+			end
+			return
+		end
+		skinKey = key
+		for _, sc in skinCards do
+			sc.card.Frame:Destroy()
+		end
+		skinCards = {}
+		for i, sk in Config.BaseSkins do
+			local owned = sk.Price == 0 or (s.Skins and s.Skins[sk.Id])
+			local equipped = (s.Skin or "Default") == sk.Id
+			local c = card(baseList, { Height = 80, Color = sk.Accent or C.Pink, Icon = sk.Icon, Title = sk.Name, Sub = if owned then "Owned" else "Costs " .. Format.money(sk.Price), RightWidth = 170, LayoutOrder = 10 + i })
+			if sk.Floor then
+				-- превью: пол + неоновая полоска
+				c.Tile.BackgroundColor3 = WHITE
+				c.SetAccent(sk.Floor)
+			end
+			local entry = { card = c, skin = sk }
+			if equipped then
+				c.SetDone(true)
+				chip(c.Frame, "✅ EQUIPPED", C.Green, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(0, 36) })
+			elseif owned then
+				btn(c.Frame, { Text = "Equip", Color = C.Blue, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(156, 52), TextSize = 22, OnClick = function()
+					Action:FireServer("Skin", sk.Id)
+				end })
+			else
+				entry.buy = btn(c.Frame, { Text = Format.money(sk.Price), Color = if s.Cash >= sk.Price then C.Green else Color3.fromRGB(150, 140, 170), AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(156, 52), TextSize = 22, OnClick = function()
+					Action:FireServer("Skin", sk.Id)
+				end })
+			end
+			table.insert(skinCards, entry)
+		end
+	end
 
 	-- =========================================================
 	-- 🧰 GEAR
@@ -887,6 +950,64 @@ function HUD.Build()
 			t.st.Thickness = if on then 4 else 3
 			t.g.Color = if on then ColorSequence.new(Color3.fromRGB(255, 230, 110), Color3.fromRGB(255, 160, 30)) else ColorSequence.new(C.CardHi, C.Card)
 		end
+	end
+
+	-- =========================================================
+	-- 📅 CALENDAR (7 дней)
+	-- =========================================================
+	local calPanel = makePanel("Calendar", "📅", "Daily Rewards", C.Green)
+	local calGrid = frame(calPanel.Body, { Size = UDim2.new(1, 0, 0, 294) })
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 142), CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center }, calGrid)
+	local calTiles = {}
+	for i, d in Config.Calendar do
+		local big = i == #Config.Calendar
+		local t = frame(calGrid, { BackgroundTransparency = 0, BackgroundColor3 = WHITE, LayoutOrder = i })
+		corner(t, 16)
+		local st = stroke(t, C.Ink, 3)
+		local g = grad(t, C.CardHi, C.Card)
+		local dayL = label(t, "DAY " .. i, 18, { Position = UDim2.fromOffset(0, 6), Size = UDim2.new(1, 0, 0, 24), TextColor3 = if big then C.Gold else C.Sub })
+		if big then
+			local streaky = Pets.ById.Streaky
+			slimeIcon(t, streaky and streaky.Color or C.Gold, 52, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 32) })
+		else
+			local icon = string.match(d.Label, "^(%S+)") or "🎁"
+			emoji(t, icon, 40, { Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 50) })
+		end
+		local name = label(t, (string.gsub(d.Label, "^%S+%s*", "")), 18, { Position = UDim2.fromOffset(4, 84), Size = UDim2.new(1, -8, 0, 24), TextWrapped = false })
+		fit(name, 18, 8)
+		local sub = label(t, d.Sub or "", 14, { Position = UDim2.fromOffset(4, 108), Size = UDim2.new(1, -8, 0, 20), TextColor3 = C.Sub, TextWrapped = false })
+		fit(sub, 14, 7)
+		local check = emoji(t, "✅", 34, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -2, 0, 0), Size = UDim2.fromOffset(38, 38), Visible = false })
+		calTiles[i] = { st = st, g = g, check = check, day = dayL, big = big }
+	end
+	local calBtn = btn(calPanel.Body, { Text = "CLAIM!", Color = C.Green, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(360, 66), TextSize = 30, OnClick = function()
+		Action:FireServer("Daily")
+	end })
+	local calPulse = 0
+	updateCalendar = function(c)
+		local ready = c.ReadyIn <= 0
+		calPanel.Sub.Text = ("Week %d · %d day streak 🔥"):format(c.Week, c.Streak)
+		for i, t in calTiles do
+			local claimed = i < c.Next
+			local today = i == c.Next
+			t.check.Visible = claimed
+			if claimed then
+				t.g.Color = ColorSequence.new(Color3.fromRGB(70, 140, 90), Color3.fromRGB(40, 100, 60))
+				t.st.Color = C.Ink
+				t.st.Thickness = 3
+			elseif today then
+				t.g.Color = ColorSequence.new(Color3.fromRGB(255, 225, 110), Color3.fromRGB(255, 160, 40))
+				t.st.Color = WHITE
+				t.st.Thickness = if ready then 3 + calPulse else 3
+			else
+				t.g.Color = if t.big then ColorSequence.new(Color3.fromRGB(150, 90, 230), Color3.fromRGB(90, 50, 160)) else ColorSequence.new(C.CardHi, C.Card)
+				t.st.Color = C.Ink
+				t.st.Thickness = 3
+			end
+		end
+		calPulse = if calPulse == 0 then 2 else 0
+		calBtn.SetText(if ready then "🎁 CLAIM DAY " .. c.Next .. "!" else "⏳ Next in " .. Format.time(c.ReadyIn))
+		calBtn.SetColor(if ready then C.Green else C.Gray)
 	end
 
 	-- =========================================================
@@ -1065,8 +1186,9 @@ function HUD.Build()
 			fit(n, 15, 7)
 			local rl = label(cell, r.Name, 13, { Position = UDim2.new(0, 4, 0, 82), Size = UDim2.new(1, -8, 0, 20), TextColor3 = r.Color, TextWrapped = false })
 			fit(rl, 13, 7)
-			if def.Event or def.Night then
-				emoji(cell, if def.Night then "🌙" else "🎃", 18, { Position = UDim2.fromOffset(2, 2), Size = UDim2.fromOffset(22, 22) })
+			local badge = if def.Night then "🌙" elseif def.Event == "Winter" then "❄️" elseif def.Event then "🎃" elseif def.Exclusive then "🌟" else nil
+			if badge then
+				emoji(cell, badge, 18, { Position = UDim2.fromOffset(2, 2), Size = UDim2.fromOffset(22, 22) })
 			end
 		end
 
@@ -1217,8 +1339,8 @@ function HUD.Build()
 	sb.Speed = sideButton("⚡", "Speed", Color3.fromRGB(40, 190, 255), function()
 		Action:FireServer("BuySpeed")
 	end)
-	sb.Daily = sideButton("🎁", "Daily", C.Green, function()
-		Action:FireServer("Daily")
+	sb.Daily = sideButton("📅", "Daily", C.Green, function()
+		togglePanel(calPanel)
 	end)
 	sb.Lock = sideButton("🔒", "Lock", C.Red, function()
 		Action:FireServer("Lock")
@@ -1283,6 +1405,14 @@ function HUD.Build()
 		buddyBtn.SetColor(if s.Buddy then C.Green else C.Gray)
 
 		rebuildFuse(s.Fusable or {})
+		rebuildSkins(s)
+		if s.Premium then
+			premBtn.SetText("✅ ACTIVE")
+			premBtn.SetColor(C.Gray)
+		end
+		if s.Rewards and s.Rewards.Calendar then
+			updateCalendar(s.Rewards.Calendar)
+		end
 
 		-- Rewards / потион / подарок / спин
 		local rw = s.Rewards
