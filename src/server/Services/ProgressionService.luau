@@ -61,6 +61,32 @@ function ProgressionService:BuySpeed(player: Player)
 	end
 end
 
+function ProgressionService:SlotCost(data): number?
+	local bought = data.ExtraSlots or 0
+	if bought >= Config.SlotUpgrade.Max then
+		return nil
+	end
+	return math.floor(Config.SlotUpgrade.BaseCost * Config.SlotUpgrade.CostMult ^ bought)
+end
+
+function ProgressionService:BuySlot(player: Player)
+	local data = self.S.DataService:Get(player)
+	if not data then
+		return
+	end
+	local cost = self:SlotCost(data)
+	if not cost then
+		return
+	end
+	if not self.S.EconomyService:TrySpend(player, cost) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	data.ExtraSlots = (data.ExtraSlots or 0) + 1
+	self.S.PlotService:RefreshSlots(player)
+	self.S.SocialService:Notify(player, "🫧 +1 slime slot! (" .. self.S.PlotService:MaxSlots(player) .. " total)", Color3.fromRGB(140, 255, 200), "Buy")
+end
+
 function ProgressionService:UpgradePet(player: Player, slot: string)
 	local data = self.S.DataService:Get(player)
 	local entry = data and data.Pets[slot]
@@ -120,6 +146,8 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "BuySlot" then
+			self:BuySlot(player)
 		elseif action == "BuyGear" then
 			self.S.GearService:Buy(player, arg)
 		elseif action == "ClaimQuest" then

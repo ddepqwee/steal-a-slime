@@ -82,7 +82,7 @@ function WorldEventService:_grant(player: Player, entry): boolean
 		return false
 	end
 	if not Plot:FreeSlot(player) then
-		self.S.SocialService:Notify(player, "Base is full! Sell a slime or get +4 Slots", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "Base is full! Sell a slime or buy more slots in 🧰 Gear", Color3.fromRGB(255, 120, 120))
 		return false
 	end
 	local slot = Plot:AddPet(player, entry)
@@ -227,9 +227,16 @@ function WorldEventService:BanditBonked(player: Player, npc: Model)
 	end
 	bonkedBandits[npc] = true
 	local cfg = Config.WorldEvents.Raid
-	local reward = math.floor(math.max(cfg.RewardMin, self.S.EconomyService:GetIncome(player) * 60 * cfg.RewardMinutes))
+	local reward = math.floor(math.max(cfg.RewardMin, self.S.EconomyService:GetIncome(player) * cfg.RewardSeconds))
 	self.S.EconomyService:AddCash(player, reward)
 	self.S.QuestService:Add(player, "Bonk", 1)
+	if rng:NextNumber() < cfg.SlimeChance then
+		local entry = self.S.SpawnService:RollEntry(2, 1.5)
+		if self:_grant(player, entry) then
+			local def = Pets.ById[entry.Id]
+			self.S.SocialService:NotifyAll("🦹 " .. player.DisplayName .. " found a " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. " in a bandit's bag!", Config.Rarities[def.Rarity].Color)
+		end
+	end
 	local root = npc:FindFirstChild("HumanoidRootPart")
 	if root then
 		burst(root.Position + Vector3.new(0, 3, 0), ColorSequence.new(Color3.fromRGB(255, 230, 80), Color3.fromRGB(120, 255, 120)), 60)
@@ -247,14 +254,14 @@ end
 
 function WorldEventService:Raid()
 	local cfg = Config.WorldEvents.Raid
-	self.S.SocialService:NotifyAll("🦹 BANDIT RAID! Bonk the bandits to steal their cash bags!", Color3.fromRGB(255, 170, 60), "Legendary")
+	self.S.SocialService:NotifyAll("🦹 BANDIT RAID! 12 bandits are running around — chase & BONK them for cash!", Color3.fromRGB(255, 170, 60), "Legendary")
 	local names = { "Bandit Bob", "Sneaky Sam", "Greedy Gus", "Robber Rex", "Shady Shay", "Loot Larry" }
 	local bandits = {}
 	for i = 1, cfg.Count do
 		local at = CFrame.new(Vector3.new(rng:NextNumber(-140, 140), 4, rng:NextNumber(-10, 10)))
 		local npc = self.S.DirectorService:_makeThief(names[((i - 1) % #names) + 1], at)
 		local hum = npc:FindFirstChildOfClass("Humanoid")
-		hum.WalkSpeed = 14
+		hum.WalkSpeed = cfg.Speed
 		-- мешок денег над головой
 		local head = npc:FindFirstChild("Head")
 		if head then
@@ -275,11 +282,38 @@ function WorldEventService:Raid()
 		end
 		CollectionService:AddTag(npc, "Bandit")
 		table.insert(bandits, npc)
-		-- бродят между случайными точками у дороги
+		-- бродят у дороги и убегают от игроков
 		task.spawn(function()
+			local nextWander = 0
 			while npc.Parent do
-				hum:MoveTo(Vector3.new(rng:NextNumber(-150, 150), 0, rng:NextNumber(-18, 18)))
-				task.wait(rng:NextNumber(2, 4))
+				local root = npc:FindFirstChild("HumanoidRootPart")
+				if not root then
+					break
+				end
+				local nearest, dist = nil, math.huge
+				for _, p in Players:GetPlayers() do
+					local pr = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+					if pr then
+						local d = (pr.Position - root.Position).Magnitude
+						if d < dist then
+							nearest, dist = pr, d
+						end
+					end
+				end
+				if nearest and dist < cfg.FleeRange then
+					local away = (root.Position - nearest.Position) * Vector3.new(1, 0, 1)
+					away = if away.Magnitude > 0.1 then away.Unit else Vector3.new(1, 0, 0)
+					-- лёгкий зигзаг, чтобы погоня была интереснее
+					away = (CFrame.Angles(0, rng:NextNumber(-0.6, 0.6), 0) * CFrame.new(away)).Position
+					local target = root.Position + away * 22
+					target = Vector3.new(math.clamp(target.X, -165, 165), 0, math.clamp(target.Z, -140, 140))
+					hum:MoveTo(target)
+					nextWander = os.clock() + 1.5
+				elseif os.clock() > nextWander then
+					hum:MoveTo(Vector3.new(rng:NextNumber(-150, 150), 0, rng:NextNumber(-18, 18)))
+					nextWander = os.clock() + rng:NextNumber(2, 4)
+				end
+				task.wait(0.3)
 			end
 		end)
 	end

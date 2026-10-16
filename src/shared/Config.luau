@@ -18,8 +18,10 @@ Config.GroupIncomeBonus = 0.10
 
 -- Экономика
 Config.StartCash = 100
-Config.BaseSlots = 10
-Config.ExtraSlotsFromPass = 4
+Config.BaseSlots = 12
+Config.ExtraSlotsFromPass = 3
+-- Докупка слотов за игровые деньги: до +6, цена растёт
+Config.SlotUpgrade = { Max = 6, BaseCost = 500, CostMult = 3.2 }
 Config.OfflineMaxSeconds = 2 * 60 * 60
 Config.OfflineRate = 0.25 -- доля дохода, которую получаешь офлайн
 Config.SellRate = 0.5
@@ -72,7 +74,7 @@ Config.AnnounceFromRarity = 5 -- с Legendary объявляем на весь �
 Config.GamePasses = {
 	DoubleCash = { Id = 0, Title = "2x Cash", Desc = "Double cash forever", Price = 199 },
 	VIP = { Id = 0, Title = "VIP", Desc = "+25% luck, +speed, VIP tag", Price = 299 },
-	ExtraSlots = { Id = 0, Title = "+4 Slots", Desc = "More room on your base", Price = 149 },
+	ExtraSlots = { Id = 0, Title = "+3 Slots", Desc = "More room on your base", Price = 149 },
 	LongLock = { Id = 0, Title = "Mega Lock", Desc = "Base lock lasts 2x longer", Price = 99 },
 }
 Config.Products = {
@@ -109,7 +111,7 @@ Config.WorldEvents = {
 	MaxGap = 420,
 	Meteor = { Warn = 10, ClaimHold = 2.5, MinRarity = 5, Lifetime = 60 },
 	Rain = { Count = 18, Duration = 30, LuckMult = 3 },
-	Raid = { Count = 4, Duration = 45, RewardMinutes = 3, RewardMin = 2_000 },
+	Raid = { Count = 12, Duration = 60, RewardSeconds = 20, RewardMin = 150, SlimeChance = 0.08, Speed = 17, FleeRange = 18 },
 }
 
 -- Ежедневные квесты (3 в день из пула)

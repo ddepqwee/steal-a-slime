@@ -20,7 +20,8 @@ function PlotService:GetPlot(player: Player)
 end
 
 function PlotService:MaxSlots(player: Player): number
-	local n = Config.BaseSlots
+	local data = self.S.DataService:Get(player)
+	local n = Config.BaseSlots + (if data then data.ExtraSlots or 0 else 0)
 	if self.S.MonetizationService:HasPass(player, "ExtraSlots") then
 		n += Config.ExtraSlotsFromPass
 	end

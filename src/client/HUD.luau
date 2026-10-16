@@ -286,6 +286,20 @@ function HUD.Build()
 
 	local gearPanel = panel("Gear", "🧰 Gear Shop")
 	local gearList = scroller(gearPanel, UDim2.new(1, 0, 0, 70))
+	gearList.Position = UDim2.fromScale(0.04, 0.36)
+	gearList.Size = UDim2.fromScale(0.92, 0.6)
+	-- строка покупки слотов
+	local slotRow = Instance.new("Frame")
+	slotRow.BackgroundColor3 = Color3.fromRGB(60, 40, 100)
+	slotRow.Position = UDim2.fromScale(0.04, 0.19)
+	slotRow.Size = UDim2.fromScale(0.92, 0.14)
+	corner(slotRow, 14)
+	stroke(slotRow, Color3.fromRGB(140, 255, 200), 2)
+	slotRow.Parent = gearPanel
+	local slotText = text(slotRow, { Text = "🫧 +1 Slime Slot", Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.03, 0.1), TextXAlignment = Enum.TextXAlignment.Left })
+	local slotBtn = button(slotRow, { Text = "...", Size = UDim2.fromScale(0.3, 0.8), Position = UDim2.fromScale(0.67, 0.1) }, Color3.fromRGB(80, 200, 120), function()
+		Action:FireServer("BuySlot")
+	end)
 	local indexPanel = panel("Index", "📖 Slime Index")
 	local indexInfo = text(indexPanel, { Text = "", Size = UDim2.fromScale(0.5, 0.08), Position = UDim2.fromScale(0.36, 0.06), TextColor3 = Color3.fromRGB(140, 255, 160), TextXAlignment = Enum.TextXAlignment.Right })
 	local indexList = scroller(indexPanel, UDim2.new(0.235, 0, 0, 74))
@@ -463,6 +477,8 @@ function HUD.Build()
 		cash.Text = Format.money(s.Cash)
 		income.Text = "+" .. Format.money(s.Income) .. "/s"
 		slots.Text = "🫧 Slimes: " .. s.UsedSlots .. "/" .. s.Slots
+		slotText.Text = ("🫧 +1 Slime Slot  (%d/%d bought)"):format(s.SlotsBought or 0, s.SlotsBuyMax or 6)
+		slotBtn.Text = if (s.SlotCost or -1) < 0 then "MAX" else Format.money(s.SlotCost)
 		speedBtn.Text = if s.SpeedCost < 0 then "MAX" else Format.money(s.SpeedCost)
 		dailyBtn.Text = if s.DailyIn <= 0 then "Claim!" else Format.time(s.DailyIn)
 		rebInfo.Text = ("Rebirths: %d\nCost: %s\nReward: +%d%% cash forever\n(cash, slimes and speed reset)"):format(

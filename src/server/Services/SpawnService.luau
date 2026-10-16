@@ -116,7 +116,7 @@ function SpawnService:TryBuy(player: Player, item)
 		return
 	end
 	if not Plot:FreeSlot(player) then
-		self.S.SocialService:Notify(player, "Base is full! Sell a slime or get +4 Slots", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "Base is full! Sell a slime or buy more slots in 🧰 Gear", Color3.fromRGB(255, 120, 120))
 		return
 	end
 	if not self.S.EconomyService:TrySpend(player, item.price) then

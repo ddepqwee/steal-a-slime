@@ -276,11 +276,11 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 	-- Пьедесталы: круглые подиумы с неоновым кольцом
 	local pedestals = {}
 	local slot = 0
-	for row = 1, 2 do
+	for row = 1, 3 do
 		for col = 1, COLS do
 			slot += 1
 			local x = (col - (COLS + 1) / 2) * 7
-			local z = if row == 1 then 6 else 18
+			local z = ({ 6, 18, -6 })[row]
 			local base = at(x, 0, z)
 			part({ Name = "PedRing", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 6, 6), CFrame = base * CFrame.new(0, 1.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = accent, Material = Enum.Material.Neon, CanCollide = false })
 			local ped = part({ Name = "Pedestal" .. slot, Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 5, 5), CFrame = base * CFrame.new(0, 1.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 255, 255), Material = Enum.Material.SmoothPlastic })
@@ -413,11 +413,6 @@ function MapBuilder:_halloween()
 				l.Range = 22
 			end
 		end
-	end
-	-- летучие мыши-силуэты над дорогой
-	for _ = 1, 14 do
-		local c = Vector3.new(rng:NextNumber(-150, 150), rng:NextNumber(30, 55), rng:NextNumber(-60, 60))
-		part({ Name = "Bat", Size = Vector3.new(3.5, 0.3, 1.2), Position = c, Color = Color3.fromRGB(25, 15, 35), CanCollide = false, CastShadow = false })
 	end
 	local sign = part({ Name = "HalloweenSign", Size = Vector3.new(1, 1, 1), Position = Vector3.new(self.RoadStart.X - 2, 37, 0), Transparency = 1, CanCollide = false })
 	label(sign, "🎃 HALLOWEEN EVENT 🎃", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(255, 150, 40))

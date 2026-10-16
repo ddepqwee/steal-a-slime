@@ -33,6 +33,7 @@ local function template()
 		FirstJoin = os.time(),
 		Index = { Blobby = true },
 		Gear = {},
+		ExtraSlots = 0,
 		Quests = nil,
 	}
 end
