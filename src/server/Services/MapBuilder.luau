@@ -2,7 +2,10 @@
 -- Вся карта строится кодом при старте сервера: земля, дорога-конвейер,
 -- 8 открытых баз игроков, порталы, деревья, доска лидеров, освещение.
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+
+local Config = require(ReplicatedStorage.Shared.Config)
 
 local MapBuilder = {}
 MapBuilder.Plots = {}
@@ -355,6 +358,71 @@ function MapBuilder:_board()
 	self.BoardLabel = list
 end
 
+-- 🎃 Хэллоуин: закатный свет, тыквы, оранжевые фонари, летучие мыши
+local function pumpkin(pos: Vector3, size: number, rng: Random)
+	local body = part({ Name = "Pumpkin", Shape = Enum.PartType.Ball, Size = Vector3.new(size * 1.25, size, size * 1.25), Position = pos + Vector3.new(0, size / 2, 0), Color = Color3.fromRGB(255, 120, 20), CanCollide = false })
+	body.Shape = Enum.PartType.Ball
+	part({ Name = "Stem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.3, size * 0.15, size * 0.15), CFrame = CFrame.new(pos + Vector3.new(0, size * 1.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 130, 50) })
+	local yaw = rng:NextNumber(0, math.pi * 2)
+	local face = CFrame.new(body.Position) * CFrame.Angles(0, yaw, 0)
+	for _, side in { -1, 1 } do
+		part({ Name = "PumpkinEye", Size = Vector3.new(size * 0.22, size * 0.18, 0.2), CFrame = face * CFrame.new(side * size * 0.22, size * 0.12, -size * 0.6) * CFrame.Angles(0, 0, math.rad(side * 25)), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
+	end
+	part({ Name = "PumpkinMouth", Size = Vector3.new(size * 0.55, size * 0.12, 0.2), CFrame = face * CFrame.new(0, -size * 0.15, -size * 0.6), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 140, 40)
+	light.Range = size * 3
+	light.Brightness = 1.5
+	light.Parent = body
+end
+
+function MapBuilder:_halloween()
+	Lighting.ClockTime = 17.6
+	Lighting.Brightness = 1.6
+	Lighting.OutdoorAmbient = Color3.fromRGB(120, 90, 130)
+	local atm = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atm then
+		atm.Color = Color3.fromRGB(255, 170, 120)
+		atm.Decay = Color3.fromRGB(120, 60, 160)
+		atm.Density = 0.38
+	end
+	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+	if cc then
+		cc.TintColor = Color3.fromRGB(255, 235, 225)
+	end
+	local rng = Random.new(31)
+	-- тыквы вдоль дороги и у баз
+	for x = -150, 150, 22 do
+		for _, side in { -1, 1 } do
+			pumpkin(Vector3.new(x + rng:NextNumber(-3, 3), 0.3, side * 17.5), rng:NextNumber(2, 3.2), rng)
+		end
+	end
+	for _ = 1, 40 do
+		local pos = Vector3.new(rng:NextNumber(-260, 260), 0, rng:NextNumber(-200, 200))
+		if not (math.abs(pos.X) < 175 and math.abs(pos.Z) < 95) then
+			pumpkin(pos, rng:NextNumber(3, 7), rng)
+		end
+	end
+	-- фонари баз в оранжевый
+	for _, d in mapFolder:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "Lamp" then
+			d.Color = Color3.fromRGB(255, 140, 30)
+			local l = d:FindFirstChildOfClass("PointLight")
+			if l then
+				l.Color = Color3.fromRGB(255, 140, 30)
+				l.Range = 22
+			end
+		end
+	end
+	-- летучие мыши-силуэты над дорогой
+	for _ = 1, 14 do
+		local c = Vector3.new(rng:NextNumber(-150, 150), rng:NextNumber(30, 55), rng:NextNumber(-60, 60))
+		part({ Name = "Bat", Size = Vector3.new(3.5, 0.3, 1.2), Position = c, Color = Color3.fromRGB(25, 15, 35), CanCollide = false, CastShadow = false })
+	end
+	local sign = part({ Name = "HalloweenSign", Size = Vector3.new(1, 1, 1), Position = Vector3.new(self.RoadStart.X - 2, 37, 0), Transparency = 1, CanCollide = false })
+	label(sign, "🎃 HALLOWEEN EVENT 🎃", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(255, 150, 40))
+end
+
 function MapBuilder:Init()
 	mapFolder = Instance.new("Folder")
 	mapFolder.Name = "Map"
@@ -372,6 +440,11 @@ function MapBuilder:Init()
 	end
 	self:_trees()
 	self:_board()
+	local season = Config.Season
+	local now = os.time()
+	if season and season.Name == "Halloween" and now >= season.Start and now < season.End then
+		self:_halloween()
+	end
 end
 
 function MapBuilder:IsInPlot(plot, position: Vector3): boolean

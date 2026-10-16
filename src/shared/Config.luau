@@ -89,6 +89,19 @@ Config.Schedule = {
 	{ Name = "CASH STORM x2", EveryHours = 4, StartMinute = 45, Duration = 10, Cash = 2 },
 }
 
+-- Сезонный ивент: включается/выключается сам по дате (UTC)
+Config.Season = {
+	Name = "Halloween",
+	Title = "🎃 HALLOWEEN EVENT",
+	Start = 1792108800, -- 2026-10-16
+	End = 1793664000, -- 2026-11-03
+	EventPetChance = 0.35, -- шанс, что выпадет ивентовый слайм этой редкости
+	SpookyEveryHours = 2,
+	SpookyMinute = 15,
+	SpookyDuration = 10,
+	SpookyMult = 3,
+}
+
 -- LiveOps: удалённое управление через Open Cloud (DataStore + MessagingService)
 Config.LiveOpsStore = "LiveOps"
 Config.LiveOpsKey = "live"

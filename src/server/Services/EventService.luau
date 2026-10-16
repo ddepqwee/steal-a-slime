@@ -24,6 +24,13 @@ function EventService:Active()
 			table.insert(result, { Name = ev.Name, Ends = ends, Luck = ev.Luck, Gold = ev.Gold, Cash = ev.Cash })
 		end
 	end
+	local season = self:Season()
+	if season then
+		table.insert(result, { Name = season.Title, Ends = season.End })
+		if hourIndex % season.SpookyEveryHours == 0 and minute >= season.SpookyMinute and minute < season.SpookyMinute + season.SpookyDuration then
+			table.insert(result, { Name = "👻 SPOOKY HOUR x" .. season.SpookyMult, Ends = hourIndex * 3600 + (season.SpookyMinute + season.SpookyDuration) * 60, Season = season.SpookyMult })
+		end
+	end
 	local live = self.S.LiveOpsService.Values
 	if live.event and (live.eventEnds or 0) > now then
 		table.insert(result, { Name = live.event, Ends = live.eventEnds })
@@ -42,6 +49,20 @@ local function product(field)
 		end
 	end
 	return m
+end
+
+function EventService:Season()
+	local s = Config.Season
+	local now = os.time()
+	if s and now >= s.Start and now < s.End then
+		return s
+	end
+	return nil
+end
+
+-- Множитель шанса ивентовых слаймов (Spooky Hour)
+function EventService:SeasonMult(): number
+	return product("Season")
 end
 
 function EventService:GetLuck(): number

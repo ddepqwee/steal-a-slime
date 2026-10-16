@@ -30,6 +30,13 @@ Pets.List = {
 	-- Secret
 	{ Id = "GreatBlob", Name = "The Great Blob", Rarity = 7, Price = 300_000_000, Income = 800_000, Color = Color3.fromRGB(255, 255, 255), Size = 6.0, Crown = true, Sparkle = true, Glass = true },
 	{ Id = "Glitch", Name = "G̷l̷i̷t̷c̷h̷", Rarity = 7, Price = 1_000_000_000, Income = 2_500_000, Color = Color3.fromRGB(20, 20, 20), Size = 5.5, Neon = true, Sparkle = true, Glitch = true },
+
+	-- 🎃 Halloween (Event = "Halloween": выпадают только во время ивента)
+	{ Id = "CandyCorn", Name = "Candy Corn", Rarity = 3, Price = 15_000, Income = 200, Color = Color3.fromRGB(255, 190, 60), Size = 3.3, Event = "Halloween", Stripes = true },
+	{ Id = "GhostlyGoo", Name = "Ghostly Goo", Rarity = 4, Price = 200_000, Income = 1_600, Color = Color3.fromRGB(235, 240, 255), Size = 3.9, Event = "Halloween", Ghost = true },
+	{ Id = "PumpkinPete", Name = "Pumpkin Pete", Rarity = 5, Price = 4_000_000, Income = 20_000, Color = Color3.fromRGB(255, 120, 20), Size = 4.5, Event = "Halloween", Pumpkin = true },
+	{ Id = "WitchyWobble", Name = "Witchy Wobble", Rarity = 6, Price = 40_000_000, Income = 130_000, Color = Color3.fromRGB(120, 40, 180), Size = 5.0, Event = "Halloween", WitchHat = true, Sparkle = true },
+	{ Id = "Headless", Name = "The Headless Blob", Rarity = 7, Price = 600_000_000, Income = 1_600_000, Color = Color3.fromRGB(30, 10, 40), Size = 5.6, Event = "Halloween", Neon = false, Pumpkin = true, Sparkle = true, Glitch = true },
 }
 
 Pets.ById = {}
@@ -38,6 +45,22 @@ for _, p in Pets.List do
 	Pets.ById[p.Id] = p
 	Pets.ByRarity[p.Rarity] = Pets.ByRarity[p.Rarity] or {}
 	table.insert(Pets.ByRarity[p.Rarity], p)
+end
+
+-- Пул слаймов редкости: обычные + (если ивент идёт) ивентовые с отдельным шансом
+function Pets.Pool(rarity: number, activeEvent: string?, eventChance: number, roll: number)
+	local normal, event = {}, {}
+	for _, p in Pets.ByRarity[rarity] or {} do
+		if p.Event == nil then
+			table.insert(normal, p)
+		elseif p.Event == activeEvent then
+			table.insert(event, p)
+		end
+	end
+	if #event > 0 and (roll < eventChance or #normal == 0) then
+		return event
+	end
+	return normal
 end
 
 return Pets

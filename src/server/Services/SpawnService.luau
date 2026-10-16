@@ -53,10 +53,13 @@ end
 function SpawnService:RollEntry(minRarity: number?)
 	local luck = self.S.EventService:GetLuck()
 	local rarity = self:RollRarity(luck, minRarity)
-	local pool = Pets.ByRarity[rarity]
-	while not pool and rarity > 1 do
+	local season = self.S.EventService:Season()
+	local seasonName = season and season.Name or nil
+	local eventChance = if season then math.min(0.9, season.EventPetChance * self.S.EventService:SeasonMult()) else 0
+	local pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
+	while #pool == 0 and rarity > 1 do
 		rarity -= 1
-		pool = Pets.ByRarity[rarity]
+		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
 	end
 	local def = pool[rng:NextInteger(1, #pool)]
 	local variant

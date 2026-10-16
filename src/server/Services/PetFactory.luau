@@ -39,6 +39,23 @@ local function ball(model: Model, root: BasePart?, size: number, color: Color3, 
 	return p
 end
 
+local function cyl(model: Model, root: BasePart, size: Vector3, color: Color3, offset: CFrame): Part
+	local p = Instance.new("Part")
+	p.Shape = Enum.PartType.Cylinder
+	p.Size = size
+	p.Color = color
+	p.Material = Enum.Material.SmoothPlastic
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.Anchored = false
+	p.CFrame = root.CFrame * offset
+	p.Parent = model
+	weld(root, p)
+	return p
+end
+
 -- entry = { Id, V }, opts = { Price = number? }
 function PetFactory:Build(entry, opts): Model
 	opts = opts or {}
@@ -80,19 +97,60 @@ function PetFactory:Build(entry, opts): Model
 	top.Transparency = body.Transparency
 	-- Блик
 	ball(model, root, s * 0.22, Color3.new(1, 1, 1), CFrame.new(-s * 0.22, s * 0.35, -s * 0.33), Enum.Material.Neon).Transparency = 0.3
-	-- Глаза
-	for _, side in { -1, 1 } do
-		ball(model, root, s * 0.3, Color3.new(1, 1, 1), CFrame.new(side * s * 0.2, s * 0.12, -s * 0.4))
-		local pupil = ball(model, root, s * 0.16, Color3.fromRGB(20, 20, 30), CFrame.new(side * s * 0.2, s * 0.12, -s * 0.53))
-		if def.Glitch then
-			pupil.Color = Color3.fromRGB(255, 0, 60)
-			pupil.Material = Enum.Material.Neon
+	if def.Ghost then
+		body.Transparency = 0.3
+		top.Transparency = 0.3
+		body.Material = Enum.Material.SmoothPlastic
+		top.Material = Enum.Material.SmoothPlastic
+	end
+	if def.Stripes then
+		-- кэнди-корн: белая верхушка и оранжевый пояс
+		top.Color = Color3.fromRGB(255, 250, 235)
+		local band = cyl(model, root, Vector3.new(s * 0.22, s * 1.02, s * 1.02), Color3.fromRGB(255, 110, 20), CFrame.new(0, -s * 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		band.Material = Enum.Material.SmoothPlastic
+	end
+	if def.Pumpkin then
+		-- светящееся вырезанное лицо + хвостик
+		for _, side in { -1, 1 } do
+			local eye = ball(model, root, s * 0.2, Color3.fromRGB(255, 220, 60), CFrame.new(side * s * 0.2, s * 0.14, -s * 0.44), Enum.Material.Neon)
+			eye.Size = Vector3.new(s * 0.22, s * 0.16, s * 0.1)
+			eye.Shape = Enum.PartType.Block
+			eye.CFrame = root.CFrame * CFrame.new(side * s * 0.2, s * 0.14, -s * 0.46) * CFrame.Angles(0, 0, math.rad(side * 25))
+		end
+		local mouth = ball(model, root, s * 0.1, Color3.fromRGB(255, 220, 60), CFrame.new(0, -s * 0.12, -s * 0.46), Enum.Material.Neon)
+		mouth.Shape = Enum.PartType.Block
+		mouth.Size = Vector3.new(s * 0.5, s * 0.1, s * 0.1)
+		mouth.CFrame = root.CFrame * CFrame.new(0, -s * 0.12, -s * 0.46)
+		cyl(model, root, Vector3.new(s * 0.3, s * 0.12, s * 0.12), Color3.fromRGB(70, 140, 50), CFrame.new(0, s * 0.72, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 150, 40)
+		glow.Range = 12
+		glow.Brightness = 2
+		glow.Parent = body
+	else
+		-- Глаза
+		for _, side in { -1, 1 } do
+			ball(model, root, s * 0.3, Color3.new(1, 1, 1), CFrame.new(side * s * 0.2, s * 0.12, -s * 0.4))
+			local pupil = ball(model, root, s * 0.16, Color3.fromRGB(20, 20, 30), CFrame.new(side * s * 0.2, s * 0.12, -s * 0.53))
+			if def.Glitch then
+				pupil.Color = Color3.fromRGB(255, 0, 60)
+				pupil.Material = Enum.Material.Neon
+			end
+		end
+		-- Румянец
+		for _, side in { -1, 1 } do
+			local cheek = ball(model, root, s * 0.14, Color3.fromRGB(255, 120, 150), CFrame.new(side * s * 0.34, -s * 0.05, -s * 0.36))
+			cheek.Transparency = 0.35
 		end
 	end
-	-- Румянец
-	for _, side in { -1, 1 } do
-		local cheek = ball(model, root, s * 0.14, Color3.fromRGB(255, 120, 150), CFrame.new(side * s * 0.34, -s * 0.05, -s * 0.36))
-		cheek.Transparency = 0.35
+	if def.WitchHat then
+		local hatColor = Color3.fromRGB(35, 20, 50)
+		cyl(model, root, Vector3.new(s * 0.06, s * 1.0, s * 1.0), hatColor, CFrame.new(0, s * 0.66, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		local band = cyl(model, root, Vector3.new(s * 0.1, s * 0.56, s * 0.56), Color3.fromRGB(170, 70, 255), CFrame.new(0, s * 0.73, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		band.Material = Enum.Material.Neon
+		for i, k in { 0.5, 0.36, 0.22 } do
+			cyl(model, root, Vector3.new(s * 0.2, s * k, s * k), hatColor, CFrame.new(-s * 0.03 * i, s * (0.8 + i * 0.17), 0) * CFrame.Angles(0, 0, math.rad(90 + i * 6)))
+		end
 	end
 	-- Корона
 	if def.Crown then
@@ -159,6 +217,9 @@ function PetFactory:Build(entry, opts): Model
 	local rarityText = rarity.Name
 	if variant then
 		rarityText = variant.Label .. " " .. rarityText
+	end
+	if def.Event == "Halloween" then
+		rarityText = "🎃 " .. rarityText
 	end
 	line("Rarity", rarityText, if variant then variant.Color else rarity.Color, 16)
 	line("Name", def.Name, Color3.new(1, 1, 1), 22)
