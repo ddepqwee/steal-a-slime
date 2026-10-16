@@ -285,7 +285,7 @@ function ProgressionService:Rebirth(player: Player)
 	self.S.EconomyService:Refresh(player)
 	self.S.EconomyService:AddCash(player, 0)
 	self.S.SocialService:NotifyAll("♻️ " .. player.DisplayName .. " rebirthed! (#" .. data.Rebirths .. ")", Color3.fromRGB(200, 140, 255))
-	self.S.SocialService:Notify(player, "🔮 +1 Rebirth Token! Spend it on permanent perks in ♻️ Rebirth", Color3.fromRGB(200, 160, 255))
+	self.S.SocialService:Notify(player, "🔮 +1 Rebirth Token! Spend it on permanent perks in ♻️ Rebirth", Color3.fromRGB(200, 160, 255), "Rebirth")
 	self.S.AchievementService:Check(player)
 	self.S.IndexService:SendMeta(player)
 	self.S.AnalyticsHub:Rebirth(player, data.Rebirths)
@@ -337,6 +337,11 @@ function ProgressionService:Start()
 			self:BuySlot(player)
 		elseif action == "BuyGear" then
 			self.S.GearService:Buy(player, arg)
+		elseif action == "Settings" then
+			local d = self.S.DataService:Get(player)
+			if d and type(arg) == "table" then
+				d.Settings = { Music = arg.Music ~= false, Sfx = arg.Sfx ~= false }
+			end
 		elseif action == "Skin" then
 			self.S.PlotService:BuySkin(player, arg)
 		elseif action == "ClaimQuest" then

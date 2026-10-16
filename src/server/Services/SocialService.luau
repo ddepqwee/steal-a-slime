@@ -16,18 +16,16 @@ function SocialService:Init(S)
 end
 
 function SocialService:Notify(player: Player, text: string, color: Color3?, sound: string?)
-	NotifyRemote:FireClient(player, text, color or Color3.new(1, 1, 1), sound and Config.Sounds[sound] or "")
+	-- звук передаём ключом (Buy/Steal/Legendary/...), клиент сам знает ID из AudioIds
+	NotifyRemote:FireClient(player, text, color or Color3.new(1, 1, 1), sound or "")
 end
 
 function SocialService:NotifyAll(text: string, color: Color3?, sound: string?)
-	NotifyRemote:FireAllClients(text, color or Color3.new(1, 1, 1), sound and Config.Sounds[sound] or "")
+	NotifyRemote:FireAllClients(text, color or Color3.new(1, 1, 1), sound or "")
 end
 
 function SocialService:PlaySound(player: Player, sound: string)
-	local id = Config.Sounds[sound]
-	if id and id ~= "" then
-		NotifyRemote:FireClient(player, "", Color3.new(1, 1, 1), id)
-	end
+	NotifyRemote:FireClient(player, "", Color3.new(1, 1, 1), sound)
 end
 
 local function pairKey(a: number, b: number)

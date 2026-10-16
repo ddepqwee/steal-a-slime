@@ -180,6 +180,7 @@ function EconomyService:SendState(player: Player)
 		Premium = player.MembershipType == Enum.MembershipType.Premium,
 		Skin = data.Skin or "Default",
 		Skins = data.Skins or {},
+		Settings = data.Settings or { Music = true, Sfx = true },
 	})
 end
 

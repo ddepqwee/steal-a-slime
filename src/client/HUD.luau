@@ -5,7 +5,6 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SocialService = game:GetService("SocialService")
-local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
@@ -13,6 +12,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Pets = require(ReplicatedStorage.Shared.Pets)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Sound = require(script.Parent:WaitForChild("Sound"))
 
 local player = Players.LocalPlayer
 local HUD: any = {}
@@ -139,18 +139,8 @@ local function updateScale()
 	root.Size = UDim2.fromScale(1 / s, 1 / s)
 end
 
-local function playSound(id: string)
-	if id == "" then
-		return
-	end
-	local s = Instance.new("Sound")
-	s.SoundId = id
-	s.Volume = 0.6
-	s.Parent = SoundService
-	s:Play()
-	s.Ended:Once(function()
-		s:Destroy()
-	end)
+local function playSound(key: string)
+	Sound.Play(key)
 end
 
 -- ===================== 3D-кнопка =====================
@@ -205,6 +195,7 @@ local function btn(parent, opts)
 	end)
 	root.Activated:Connect(function()
 		up()
+		Sound.Play("Click")
 		if opts.OnClick then
 			opts.OnClick()
 		end
@@ -363,6 +354,7 @@ local function closeAll()
 end
 local function openPanel(p)
 	closeAll()
+	Sound.Play("Whoosh")
 	p.Frame.Visible = true
 	p.Scale.Scale = 0.82
 	TweenService:Create(p.Scale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
@@ -1260,6 +1252,8 @@ function HUD.Build()
 		end
 		hatchSlimeScale.Scale = 0.3
 		TweenService:Create(hatchSlimeScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		Sound.Play("Pop")
+		Sound.Play(if def.Rarity >= 5 or v then "Legendary" else "Reward")
 		hatchName.Text = (if v then v.Label .. " " else "") .. def.Name
 		hatchName.TextColor3 = lighten(if v then v.Color else def.Color, 0.25)
 		hatchRarity.Text = "★ " .. r.Name .. " ★"
@@ -1285,10 +1279,12 @@ function HUD.Build()
 		local steps = n * 3 + d.Index
 		for k = 1, steps do
 			lightTile(((k - 1) % n) + 1)
+			Sound.Play("Click", 1.2 + (k % 3) * 0.1)
 			wheel.Rotation += 25
 			task.wait(0.04 + (k / steps) ^ 3 * 0.26)
 		end
 		spinResult.Text = "🎉 " .. d.Text
+		Sound.Play("Reward")
 		spinning = false
 	end)
 
@@ -1588,6 +1584,9 @@ function HUD.Build()
 
 		rebuildFuse(s.Fusable or {})
 		rebuildSkins(s)
+		if HUD._applySettings then
+			HUD._applySettings(s.Settings)
+		end
 		if s.Premium then
 			premBtn.SetText("✅ ACTIVE")
 			premBtn.SetColor(C.Gray)
@@ -1656,8 +1655,62 @@ function HUD.Build()
 
 	Net.event("Notify").OnClientEvent:Connect(function(msg, color, sound)
 		toast(msg, color)
-		playSound(sound)
+		if sound and sound ~= "" then
+			playSound(sound)
+		elseif msg ~= "" and color and color.R > 0.95 and color.G < 0.55 and color.B < 0.55 then
+			playSound("Error") -- красные сообщения = «нельзя / не хватает денег»
+		end
 	end)
+
+	-- 🎵 / 🔊 переключатели (сохраняются в профиле)
+	local setRow = frame(root, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(2 * 50 + 8, 50) })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8) }, setRow)
+	local settings = { Music = true, Sfx = true }
+	local settingsLoaded = false
+	local musicBtn, sfxBtn
+	local function paintSettings()
+		musicBtn.SetText(if settings.Music then "🎵" else "🔇")
+		musicBtn.SetColor(if settings.Music then C.Purple else C.Gray)
+		sfxBtn.SetText(if settings.Sfx then "🔊" else "🔈")
+		sfxBtn.SetColor(if settings.Sfx then C.Blue else C.Gray)
+		Sound.SetMusic(settings.Music)
+		Sound.SetSfx(settings.Sfx)
+	end
+	musicBtn = btn(setRow, { Text = "🎵", Color = C.Purple, Size = UDim2.fromOffset(50, 50), Radius = 25, TextSize = 24, LayoutOrder = 1, OnClick = function()
+		settings.Music = not settings.Music
+		paintSettings()
+		Action:FireServer("Settings", settings)
+	end })
+	sfxBtn = btn(setRow, { Text = "🔊", Color = C.Blue, Size = UDim2.fromOffset(50, 50), Radius = 25, TextSize = 24, LayoutOrder = 2, OnClick = function()
+		settings.Sfx = not settings.Sfx
+		paintSettings()
+		Action:FireServer("Settings", settings)
+	end })
+	HUD._applySettings = function(st)
+		if settingsLoaded or not st then
+			return
+		end
+		settingsLoaded = true
+		settings.Music = st.Music ~= false
+		settings.Sfx = st.Sfx ~= false
+		paintSettings()
+	end
+
+	-- взмах битой — свист
+	local function hookChar(char)
+		char.ChildAdded:Connect(function(c)
+			if c:IsA("Tool") and c.Name == "Bonk Bat" and not c:GetAttribute("SoundHooked") then
+				c:SetAttribute("SoundHooked", true)
+				c.Activated:Connect(function()
+					Sound.Play("Whoosh", 1.5)
+				end)
+			end
+		end)
+	end
+	player.CharacterAdded:Connect(hookChar)
+	if player.Character then
+		hookChar(player.Character)
+	end
 
 	task.spawn(function()
 		while true do

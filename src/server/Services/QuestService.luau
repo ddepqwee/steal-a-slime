@@ -77,7 +77,7 @@ function QuestService:Claim(player: Player, idx: number)
 	q.Claimed = true
 	local reward = self:Reward(player)
 	self.S.EconomyService:AddCash(player, reward)
-	self.S.SocialService:Notify(player, "🎉 Quest reward: +" .. Format.money(reward), Color3.fromRGB(255, 230, 90), "Buy")
+	self.S.SocialService:Notify(player, "🎉 Quest reward: +" .. Format.money(reward), Color3.fromRGB(255, 230, 90), "Reward")
 	self.S.IndexService:SendMeta(player)
 end
 

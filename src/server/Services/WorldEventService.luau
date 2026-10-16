@@ -702,22 +702,46 @@ function WorldEventService:Runaway()
 	end
 end
 
+-- имя текущего события → клиентская музыка (Boss/Raid — битва, Runaway — погоня, Rain/Hunt — праздник)
+local function running(name: string, fn)
+	ReplicatedStorage:SetAttribute("WorldEvent", name)
+	local ok, err = pcall(fn)
+	ReplicatedStorage:SetAttribute("WorldEvent", "")
+	if not ok then
+		error(err, 0)
+	end
+end
+
 function WorldEventService:RunRandom()
 	local roll = rng:NextNumber()
 	if roll < 0.12 then
-		self:Runaway()
+		running("Runaway", function()
+			self:Runaway()
+		end)
 	elseif roll < 0.28 then
-		self:Meteor()
+		running("Meteor", function()
+			self:Meteor()
+		end)
 	elseif roll < 0.42 then
-		self:Rain()
+		running("Rain", function()
+			self:Rain()
+		end)
 	elseif roll < 0.6 then
-		self:Raid()
+		running("Raid", function()
+			self:Raid()
+		end)
 	elseif roll < 0.74 then
-		self:Boss()
+		running("Boss", function()
+			self:Boss()
+		end)
 	elseif roll < 0.87 then
-		self:Hill()
+		running("Hill", function()
+			self:Hill()
+		end)
 	else
-		self:Hunt()
+		running("Hunt", function()
+			self:Hunt()
+		end)
 	end
 end
 

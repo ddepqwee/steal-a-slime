@@ -174,7 +174,7 @@ function RewardService:ClaimCalendar(player: Player)
 	data.DailyStreak = info.Streak + 1
 	data.LastDaily = os.time()
 	local text = self:_grant(player, prize)
-	self.S.SocialService:Notify(player, ("📅 Day %d reward: %s  Come back tomorrow!"):format(day, text), Color3.fromRGB(255, 220, 90), "Buy")
+	self.S.SocialService:Notify(player, ("📅 Day %d reward: %s  Come back tomorrow!"):format(day, text), Color3.fromRGB(255, 220, 90), "Reward")
 	if day == #Config.Calendar then
 		self.S.SocialService:NotifyAll("🌟 " .. player.DisplayName .. " logged in 7 days in a row and got STREAKY!", Color3.fromRGB(255, 210, 60), "Legendary")
 	end
@@ -204,7 +204,7 @@ function RewardService:ClaimGift(player: Player)
 	end
 	s.claimed += 1
 	local text = self:_grant(player, Config.PlayGifts[s.claimed])
-	self.S.SocialService:Notify(player, "🎁 Gift " .. s.claimed .. "/" .. #Config.PlayGifts .. ": " .. text, Color3.fromRGB(255, 220, 120), "Buy")
+	self.S.SocialService:Notify(player, "🎁 Gift " .. s.claimed .. "/" .. #Config.PlayGifts .. ": " .. text, Color3.fromRGB(255, 220, 120), "Reward")
 end
 
 -- ===== Колесо удачи =====
