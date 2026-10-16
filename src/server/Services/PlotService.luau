@@ -77,7 +77,7 @@ function PlotService:RenderSlot(player: Player, slot: string)
 	if not entry or not ped then
 		return
 	end
-	local model = self.S.PetFactory:Build(entry, { Scale = 1.3 })
+	local model = self.S.PetFactory:Build(entry, { Scale = 1.3 * (1 + ((entry.L or 1) - 1) * Config.Upgrade.SizePerLevel) })
 	local size = model.PrimaryPart.Size
 	model:PivotTo(CFrame.new(ped.Position + Vector3.new(0, ped.Size.X / 2 + size.Y * 0.6, 0)) * plot.CFrame.Rotation)
 	model:SetAttribute("OwnerUserId", player.UserId)
@@ -112,6 +112,24 @@ function PlotService:RenderSlot(player: Player, slot: string)
 	sell.Triggered:Connect(function(who)
 		if who == player then
 			self:Sell(player, slot)
+		end
+	end)
+
+	local cost = self.S.EconomyService:UpgradeCost(entry)
+	local up = Instance.new("ProximityPrompt")
+	up.Name = "UpgradePrompt"
+	up.ActionText = if cost then "Upgrade " .. Format.money(cost) else "MAX LEVEL"
+	up.ObjectText = model.Name .. " Lv." .. (entry.L or 1)
+	up.HoldDuration = 0
+	up.MaxActivationDistance = 9
+	up.RequiresLineOfSight = false
+	up.KeyboardKeyCode = Enum.KeyCode.E
+	up:SetAttribute("OwnerUserId", player.UserId)
+	up.Enabled = cost ~= nil
+	up.Parent = model.PrimaryPart
+	up.Triggered:Connect(function(who)
+		if who == player then
+			self.S.ProgressionService:UpgradePet(player, slot)
 		end
 	end)
 
@@ -158,7 +176,8 @@ function PlotService:AddPet(player: Player, entry): string?
 	if not data or not slot then
 		return nil
 	end
-	data.Pets[slot] = { Id = entry.Id, V = entry.V }
+	data.Pets[slot] = { Id = entry.Id, V = entry.V, L = entry.L }
+	self.S.IndexService:Discover(player, entry.Id)
 	self.S.EconomyService:Refresh(player)
 	return slot
 end

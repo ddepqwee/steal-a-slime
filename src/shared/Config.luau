@@ -89,6 +89,40 @@ Config.Schedule = {
 	{ Name = "CASH STORM x2", EveryHours = 4, StartMinute = 45, Duration = 10, Cash = 2 },
 }
 
+-- Прокачка слаймов: доход x IncomeMult^(L-1), цена шага = Price * CostBase * CostMult^(L-1)
+Config.Upgrade = { MaxLevel = 10, IncomeMult = 1.5, CostBase = 0.6, CostMult = 1.7, SizePerLevel = 0.05 }
+
+-- Слайм-индекс: за каждые StepPercent% коллекции +BonusPerStep к доходу
+Config.Index = { StepPercent = 10, BonusPerStep = 0.05 }
+
+-- Снаряжение (Gear Shop) — покупается за игровые деньги, остаётся навсегда
+Config.Gear = {
+	{ Id = "SpeedCoil", Name = "Speed Coil", Icon = "🌀", Desc = "+8 speed while holding", Price = 2_500 },
+	{ Id = "GravityBoots", Name = "Gravity Boots", Icon = "🥾", Desc = "Jump 2x higher while holding", Price = 25_000 },
+	{ Id = "MegaBat", Name = "Mega Bat", Icon = "🏏", Desc = "Bigger BONK range + knockback", Price = 250_000 },
+	{ Id = "Cloak", Name = "Invisibility Cloak", Icon = "👻", Desc = "Turn invisible for 8s (30s cooldown)", Price = 5_000_000 },
+}
+
+-- Случайные события мира
+Config.WorldEvents = {
+	MinGap = 240, -- секунд между событиями
+	MaxGap = 420,
+	Meteor = { Warn = 10, ClaimHold = 2.5, MinRarity = 5, Lifetime = 60 },
+	Rain = { Count = 18, Duration = 30, LuckMult = 3 },
+	Raid = { Count = 4, Duration = 45, RewardMinutes = 3, RewardMin = 2_000 },
+}
+
+-- Ежедневные квесты (3 в день из пула)
+Config.Quests = {
+	{ Kind = "Buy", Text = "Buy %d slimes", Min = 5, Max = 15 },
+	{ Kind = "Steal", Text = "Steal %d slimes", Min = 1, Max = 3 },
+	{ Kind = "Bonk", Text = "Bonk %d thieves or bandits", Min = 2, Max = 5 },
+	{ Kind = "Upgrade", Text = "Upgrade slimes %d times", Min = 3, Max = 8 },
+	{ Kind = "Event", Text = "Claim %d slimes from world events", Min = 1, Max = 3 },
+}
+Config.QuestRewardMinutes = 8 -- награда = доход за N минут
+Config.QuestRewardMin = 1_000
+
 -- Сезонный ивент: включается/выключается сам по дате (UTC)
 Config.Season = {
 	Name = "Halloween",

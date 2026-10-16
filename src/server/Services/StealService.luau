@@ -1,5 +1,6 @@
 --!nonstrict
 -- Кража: хватаешь чужого слайма, несёшь на свою базу. Хозяин может догнать и бонкнуть.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -116,6 +117,7 @@ function StealService:_finish(thief: Player, success: boolean)
 		if tData then
 			tData.Steals += 1
 		end
+		self.S.QuestService:Add(thief, "Steal", 1)
 		local def = Pets.ById[c.entry.Id]
 		self.S.SocialService:NotifyAll("🦹 " .. thief.DisplayName .. " stole " .. def.Name .. " from " .. c.victim.DisplayName .. "!", Color3.fromRGB(255, 160, 60))
 	else
@@ -174,12 +176,12 @@ function StealService:_giveBonk(player: Player)
 	handle.Parent = tool
 	tool.Grip = CFrame.new(-1.6, 0, 0) * CFrame.Angles(0, 0, math.rad(90))
 	tool.Activated:Connect(function()
-		self:_bonk(player)
+		self:Bonk(player, false)
 	end)
 	tool.Parent = backpack
 end
 
-function StealService:_bonk(player: Player)
+function StealService:Bonk(player: Player, mega: boolean?)
 	local now = os.clock()
 	if now - (lastBonk[player] or 0) < Config.BonkCooldown then
 		return
@@ -190,6 +192,17 @@ function StealService:_bonk(player: Player)
 	if not root then
 		return
 	end
+	local range = if mega then Config.BonkRange * 1.8 else Config.BonkRange
+	-- бандиты из событий мира
+	for _, npc in CollectionService:GetTagged("Bandit") do
+		local nRoot = npc:FindFirstChild("HumanoidRootPart")
+		if nRoot then
+			local offset = nRoot.Position - root.Position
+			if offset.Magnitude <= range + 1 and offset.Unit:Dot(root.CFrame.LookVector) > 0 then
+				self.S.WorldEventService:BanditBonked(player, npc)
+			end
+		end
+	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			local oChar = other.Character
@@ -198,11 +211,15 @@ function StealService:_bonk(player: Player)
 			if oRoot and oHum then
 				local offset = oRoot.Position - root.Position
 				local inFront = offset.Unit:Dot(root.CFrame.LookVector) > 0.2
-				if offset.Magnitude <= Config.BonkRange and inFront then
+				if offset.Magnitude <= range and inFront then
 					if carries[other] then
 						self:Drop(other, player)
+						self.S.QuestService:Add(player, "Bonk", 1)
 					end
 					oHum.Sit = true
+					if mega then
+						oRoot.AssemblyLinearVelocity = offset.Unit * 60 + Vector3.new(0, 30, 0)
+					end
 					self.S.SocialService:PlaySound(other, "Bonk")
 				end
 			end

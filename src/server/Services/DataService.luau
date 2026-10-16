@@ -31,6 +31,9 @@ local function template()
 		Receipts = {},
 		LastOnline = 0,
 		FirstJoin = os.time(),
+		Index = { Blobby = true },
+		Gear = {},
+		Quests = nil,
 	}
 end
 

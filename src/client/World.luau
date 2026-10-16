@@ -14,6 +14,8 @@ local function setupPrompt(prompt: ProximityPrompt)
 		prompt.Enabled = owner ~= player.UserId
 	elseif prompt.Name == "SellPrompt" then
 		prompt.Enabled = owner == player.UserId
+	elseif prompt.Name == "UpgradePrompt" then
+		prompt.Enabled = owner == player.UserId and prompt.ActionText ~= "MAX LEVEL"
 	end
 end
 

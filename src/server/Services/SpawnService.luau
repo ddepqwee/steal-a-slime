@@ -50,8 +50,8 @@ function SpawnService:RollRarity(luck: number, minRarity: number?): number
 	return 1
 end
 
-function SpawnService:RollEntry(minRarity: number?)
-	local luck = self.S.EventService:GetLuck()
+function SpawnService:RollEntry(minRarity: number?, luckMult: number?)
+	local luck = self.S.EventService:GetLuck() * (luckMult or 1)
 	local rarity = self:RollRarity(luck, minRarity)
 	local season = self.S.EventService:Season()
 	local seasonName = season and season.Name or nil
@@ -131,6 +131,7 @@ function SpawnService:TryBuy(player: Player, item)
 		return
 	end
 	self.S.SocialService:PlaySound(player, "Buy")
+	self.S.QuestService:Add(player, "Buy", 1)
 
 	-- Прыжок слайма на базу (косметика); данные уже сохранены
 	local model = item.model

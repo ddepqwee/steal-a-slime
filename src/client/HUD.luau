@@ -8,6 +8,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Pets = require(ReplicatedStorage.Shared.Pets)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 
@@ -258,23 +259,142 @@ function HUD.Build()
 		rebirth.Visible = false
 	end)
 
-	-- Кнопки слева: компактная сетка 2x3
+	-- ===== Новые панели: Gear / Index / Quests =====
+	local function scroller(parent, cell)
+		local sf = Instance.new("ScrollingFrame")
+		sf.BackgroundTransparency = 1
+		sf.Position = UDim2.fromScale(0.04, 0.2)
+		sf.Size = UDim2.fromScale(0.92, 0.76)
+		sf.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		sf.CanvasSize = UDim2.new()
+		sf.ScrollBarThickness = 6
+		sf.Parent = parent
+		local g = Instance.new("UIGridLayout")
+		g.CellSize = cell
+		g.CellPadding = UDim2.fromOffset(8, 8)
+		g.SortOrder = Enum.SortOrder.LayoutOrder
+		g.Parent = sf
+		return sf
+	end
+	local function clear(sf)
+		for _, c in sf:GetChildren() do
+			if c:IsA("GuiObject") then
+				c:Destroy()
+			end
+		end
+	end
+
+	local gearPanel = panel("Gear", "🧰 Gear Shop")
+	local gearList = scroller(gearPanel, UDim2.new(1, 0, 0, 70))
+	local indexPanel = panel("Index", "📖 Slime Index")
+	local indexInfo = text(indexPanel, { Text = "", Size = UDim2.fromScale(0.5, 0.08), Position = UDim2.fromScale(0.36, 0.06), TextColor3 = Color3.fromRGB(140, 255, 160), TextXAlignment = Enum.TextXAlignment.Right })
+	local indexList = scroller(indexPanel, UDim2.new(0.235, 0, 0, 74))
+	local questPanel = panel("Quests", "📜 Daily Quests")
+	local questList = scroller(questPanel, UDim2.new(1, 0, 0, 74))
+	local meta = nil
+	local questsBtnCap
+
+	local function rebuildMeta()
+		if not meta then
+			return
+		end
+		-- Gear
+		clear(gearList)
+		local owned = {}
+		for _, id in meta.Gear do
+			owned[id] = true
+		end
+		for i, g in Config.Gear do
+			local row = Instance.new("Frame")
+			row.LayoutOrder = i
+			row.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
+			corner(row, 14)
+			row.Parent = gearList
+			text(row, { Text = g.Icon .. " " .. g.Name, Size = UDim2.new(0.62, 0, 0.5, 0), Position = UDim2.fromScale(0.03, 0.05), TextXAlignment = Enum.TextXAlignment.Left })
+			text(row, { Text = g.Desc, Size = UDim2.new(0.62, 0, 0.36, 0), Position = UDim2.fromScale(0.03, 0.56), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(210, 200, 255) })
+			if owned[g.Id] then
+				text(row, { Text = "✅ OWNED", Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2), TextColor3 = Color3.fromRGB(140, 255, 160) })
+			else
+				button(row, { Text = Format.money(g.Price), Size = UDim2.fromScale(0.3, 0.7), Position = UDim2.fromScale(0.67, 0.15) }, Color3.fromRGB(80, 200, 120), function()
+					Action:FireServer("BuyGear", g.Id)
+				end)
+			end
+		end
+		-- Index
+		clear(indexList)
+		local found = {}
+		for _, id in meta.Index do
+			found[id] = true
+		end
+		indexInfo.Text = ("%d/%d · +%d%% cash"):format(#meta.Index, meta.Total, math.floor(meta.Bonus * 100 + 0.5))
+		for i, def in Pets.List do
+			local r = Config.Rarities[def.Rarity]
+			local cell = Instance.new("Frame")
+			cell.LayoutOrder = def.Rarity * 100 + i
+			cell.BackgroundColor3 = if found[def.Id] then def.Color:Lerp(Color3.new(0, 0, 0), 0.35) else Color3.fromRGB(30, 25, 40)
+			corner(cell, 12)
+			stroke(cell, r.Color, 2)
+			cell.Parent = indexList
+			text(cell, { Text = if found[def.Id] then def.Name else "???", Size = UDim2.new(0.94, 0, 0.5, 0), Position = UDim2.fromScale(0.03, 0.08) })
+			text(cell, { Text = (if def.Event then "🎃 " else "") .. r.Name, Size = UDim2.new(0.94, 0, 0.32, 0), Position = UDim2.fromScale(0.03, 0.6), TextColor3 = r.Color })
+		end
+		-- Quests
+		clear(questList)
+		local claimable = 0
+		for i, q in meta.Quests do
+			local qdef
+			for _, d in Config.Quests do
+				if d.Kind == q.Kind then
+					qdef = d
+				end
+			end
+			local row = Instance.new("Frame")
+			row.LayoutOrder = i
+			row.BackgroundColor3 = Color3.fromRGB(45, 30, 75)
+			corner(row, 14)
+			row.Parent = questList
+			local done = q.Prog >= q.Goal
+			text(row, { Text = (qdef and string.format(qdef.Text, q.Goal) or q.Kind), Size = UDim2.new(0.62, 0, 0.5, 0), Position = UDim2.fromScale(0.03, 0.06), TextXAlignment = Enum.TextXAlignment.Left })
+			text(row, { Text = ("%d / %d  ·  reward %s"):format(q.Prog, q.Goal, Format.money(meta.QuestRewards[i] or 0)), Size = UDim2.new(0.62, 0, 0.34, 0), Position = UDim2.fromScale(0.03, 0.58), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 240, 150) })
+			if q.Claimed then
+				text(row, { Text = "✅ Claimed", Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2), TextColor3 = Color3.fromRGB(140, 255, 160) })
+			elseif done then
+				claimable += 1
+				button(row, { Text = "Claim!", Size = UDim2.fromScale(0.3, 0.7), Position = UDim2.fromScale(0.67, 0.15) }, Color3.fromRGB(255, 190, 40), function()
+					Action:FireServer("ClaimQuest", i)
+				end)
+			else
+				text(row, { Text = "⏳", Size = UDim2.fromScale(0.3, 0.6), Position = UDim2.fromScale(0.67, 0.2) })
+			end
+		end
+		if questsBtnCap then
+			questsBtnCap.Text = if claimable > 0 then "Claim " .. claimable .. "!" else "Quests"
+		end
+	end
+	Net.event("Meta").OnClientEvent:Connect(function(m)
+		meta = m
+		rebuildMeta()
+	end)
+	local allPanels = { shop, rebirth, gearPanel, indexPanel, questPanel }
+
+	-- Кнопки слева: сетка 3x3
 	local side = Instance.new("Frame")
 	side.BackgroundTransparency = 1
 	side.AnchorPoint = Vector2.new(0, 0.5)
 	side.Position = UDim2.new(0, 10, 0.5, 0)
-	side.Size = UDim2.fromOffset(150, 230)
+	side.Size = UDim2.fromOffset(204, 204)
 	side.Parent = gui
 	HUD.Side = side
 	local gl = Instance.new("UIGridLayout")
-	gl.CellSize = UDim2.fromOffset(70, 70)
-	gl.CellPadding = UDim2.fromOffset(8, 8)
+	gl.CellSize = UDim2.fromOffset(62, 62)
+	gl.CellPadding = UDim2.fromOffset(6, 6)
 	gl.SortOrder = Enum.SortOrder.LayoutOrder
 	gl.Parent = side
 	local function toggle(p)
 		local was = p.Visible
-		shop.Visible = false
-		rebirth.Visible = false
+		for _, x in allPanels do
+			x.Visible = false
+		end
 		p.Visible = not was
 	end
 	local order = 0
@@ -307,6 +427,15 @@ function HUD.Build()
 	end
 	iconButton("🛒", "Shop", Color3.fromRGB(255, 175, 40), function()
 		toggle(shop)
+	end)
+	iconButton("🧰", "Gear", Color3.fromRGB(70, 200, 160), function()
+		toggle(gearPanel)
+	end)
+	iconButton("📖", "Index", Color3.fromRGB(90, 140, 255), function()
+		toggle(indexPanel)
+	end)
+	questsBtnCap = iconButton("📜", "Quests", Color3.fromRGB(255, 140, 60), function()
+		toggle(questPanel)
 	end)
 	iconButton("♻️", "Rebirth", Color3.fromRGB(170, 95, 255), function()
 		toggle(rebirth)

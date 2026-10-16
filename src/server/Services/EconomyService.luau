@@ -22,7 +22,19 @@ function EconomyService:PetIncome(entry): number
 		return 0
 	end
 	local v = entry.V and Config.Variants[entry.V]
-	return def.Income * (if v then v.Mult else 1)
+	local lvl = math.clamp(entry.L or 1, 1, Config.Upgrade.MaxLevel)
+	return def.Income * (if v then v.Mult else 1) * Config.Upgrade.IncomeMult ^ (lvl - 1)
+end
+
+-- Цена следующего уровня (или nil на максимуме)
+function EconomyService:UpgradeCost(entry): number?
+	local def = Pets.ById[entry.Id]
+	local lvl = entry.L or 1
+	if not def or lvl >= Config.Upgrade.MaxLevel then
+		return nil
+	end
+	local v = entry.V and Config.Variants[entry.V]
+	return math.floor(def.Price * (if v then v.Mult else 1) * Config.Upgrade.CostBase * Config.Upgrade.CostMult ^ (lvl - 1))
 end
 
 function EconomyService:PetValue(entry): number
@@ -31,7 +43,8 @@ function EconomyService:PetValue(entry): number
 		return 0
 	end
 	local v = entry.V and Config.Variants[entry.V]
-	return def.Price * (if v then v.Mult else 1)
+	local lvl = math.clamp(entry.L or 1, 1, Config.Upgrade.MaxLevel)
+	return def.Price * (if v then v.Mult else 1) * (1 + (lvl - 1) * 0.5)
 end
 
 function EconomyService:_compute(player: Player)
@@ -51,6 +64,7 @@ function EconomyService:_compute(player: Player)
 	if player:GetAttribute("InGroup") then
 		mult *= 1 + Config.GroupIncomeBonus
 	end
+	mult *= 1 + self.S.IndexService:Bonus(data)
 	return { base = base, mult = mult }
 end
 

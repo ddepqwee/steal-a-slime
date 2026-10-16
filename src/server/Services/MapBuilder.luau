@@ -259,7 +259,7 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 	for _, s in { -1, 1 } do
 		part({ Name = "ArchPost", Parent = model, Size = Vector3.new(1.6, 14, 1.6), CFrame = at(s * (ENTRANCE_W / 2 + 0.8), 8, -half), Color = accent, Material = Enum.Material.SmoothPlastic })
 	end
-	local _, signLabels = signBoard(model, at(0, 14.5, -half), Vector3.new(ENTRANCE_W + 6, 4, 0.8), accent, "Free Base")
+	local _, signLabels = signBoard(model, at(0, 14.5, -half), Vector3.new(ENTRANCE_W + 10, 4.5, 0.8), accent, "Free Base")
 
 	-- Силовое поле замка: по периметру, появляется только когда база закрыта
 	local lockWalls = {}
@@ -360,15 +360,15 @@ end
 
 -- 🎃 Хэллоуин: закатный свет, тыквы, оранжевые фонари, летучие мыши
 local function pumpkin(pos: Vector3, size: number, rng: Random)
-	local body = part({ Name = "Pumpkin", Shape = Enum.PartType.Ball, Size = Vector3.new(size * 1.25, size, size * 1.25), Position = pos + Vector3.new(0, size / 2, 0), Color = Color3.fromRGB(255, 120, 20), CanCollide = false })
+	local body = part({ Name = "Pumpkin", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = pos + Vector3.new(0, size / 2, 0), Color = Color3.fromRGB(255, 120, 20), CanCollide = false })
 	body.Shape = Enum.PartType.Ball
 	part({ Name = "Stem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.3, size * 0.15, size * 0.15), CFrame = CFrame.new(pos + Vector3.new(0, size * 1.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 130, 50) })
 	local yaw = rng:NextNumber(0, math.pi * 2)
 	local face = CFrame.new(body.Position) * CFrame.Angles(0, yaw, 0)
 	for _, side in { -1, 1 } do
-		part({ Name = "PumpkinEye", Size = Vector3.new(size * 0.22, size * 0.18, 0.2), CFrame = face * CFrame.new(side * size * 0.22, size * 0.12, -size * 0.6) * CFrame.Angles(0, 0, math.rad(side * 25)), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
+		part({ Name = "PumpkinEye", Size = Vector3.new(size * 0.22, size * 0.18, 0.2), CFrame = face * CFrame.new(side * size * 0.2, size * 0.1, -size * 0.45) * CFrame.Angles(0, 0, math.rad(side * 25)), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
 	end
-	part({ Name = "PumpkinMouth", Size = Vector3.new(size * 0.55, size * 0.12, 0.2), CFrame = face * CFrame.new(0, -size * 0.15, -size * 0.6), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
+	part({ Name = "PumpkinMouth", Size = Vector3.new(size * 0.55, size * 0.12, 0.2), CFrame = face * CFrame.new(0, -size * 0.13, -size * 0.46), Color = Color3.fromRGB(255, 220, 70), Material = Enum.Material.Neon, CanCollide = false })
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 140, 40)
 	light.Range = size * 3

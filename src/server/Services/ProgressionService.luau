@@ -36,6 +36,7 @@ function ProgressionService:ApplySpeed(player: Player)
 	if self.S.MonetizationService:HasPass(player, "VIP") then
 		speed += Config.Speed.VipBonus
 	end
+	speed += tonumber(player:GetAttribute("GearSpeed")) or 0
 	if player:GetAttribute("Carrying") then
 		speed *= Config.CarrySpeedMult
 	end
@@ -58,6 +59,27 @@ function ProgressionService:BuySpeed(player: Player)
 	else
 		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
 	end
+end
+
+function ProgressionService:UpgradePet(player: Player, slot: string)
+	local data = self.S.DataService:Get(player)
+	local entry = data and data.Pets[slot]
+	if not entry or self.S.StealService:IsCarried(player, slot) then
+		return
+	end
+	local cost = self.S.EconomyService:UpgradeCost(entry)
+	if not cost then
+		return
+	end
+	if not self.S.EconomyService:TrySpend(player, cost) then
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		return
+	end
+	entry.L = (entry.L or 1) + 1
+	self.S.EconomyService:Refresh(player)
+	self.S.PlotService:RenderSlot(player, slot)
+	self.S.QuestService:Add(player, "Upgrade", 1)
+	self.S.SocialService:Notify(player, "⬆️ Upgraded to Lv." .. entry.L .. "! Income x" .. Config.Upgrade.IncomeMult, Color3.fromRGB(140, 255, 160), "Buy")
 end
 
 function ProgressionService:Rebirth(player: Player)
@@ -84,7 +106,7 @@ function ProgressionService:Rebirth(player: Player)
 end
 
 function ProgressionService:Start()
-	ActionRemote.OnServerEvent:Connect(function(player, action)
+	ActionRemote.OnServerEvent:Connect(function(player, action, arg)
 		local now = os.clock()
 		if now - (lastAction[player] or 0) < 0.25 then
 			return
@@ -98,6 +120,10 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "BuyGear" then
+			self.S.GearService:Buy(player, arg)
+		elseif action == "ClaimQuest" then
+			self.S.QuestService:Claim(player, arg)
 		end
 		self.S.EconomyService:SendState(player)
 	end)

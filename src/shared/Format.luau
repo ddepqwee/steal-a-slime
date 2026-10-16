@@ -41,6 +41,10 @@ end
 
 function Format.time(seconds: number): string
 	seconds = math.max(0, math.floor(seconds))
+	if seconds >= 86400 then
+		local d = seconds // 86400
+		return string.format("%dd %dh", d, (seconds % 86400) // 3600)
+	end
 	local h = seconds // 3600
 	local m = (seconds % 3600) // 60
 	local s = seconds % 60

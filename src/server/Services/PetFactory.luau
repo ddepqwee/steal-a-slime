@@ -148,8 +148,11 @@ function PetFactory:Build(entry, opts): Model
 		cyl(model, root, Vector3.new(s * 0.06, s * 1.0, s * 1.0), hatColor, CFrame.new(0, s * 0.66, 0) * CFrame.Angles(0, 0, math.rad(90)))
 		local band = cyl(model, root, Vector3.new(s * 0.1, s * 0.56, s * 0.56), Color3.fromRGB(170, 70, 255), CFrame.new(0, s * 0.73, 0) * CFrame.Angles(0, 0, math.rad(90)))
 		band.Material = Enum.Material.Neon
-		for i, k in { 0.5, 0.36, 0.22 } do
-			cyl(model, root, Vector3.new(s * 0.2, s * k, s * k), hatColor, CFrame.new(-s * 0.03 * i, s * (0.8 + i * 0.17), 0) * CFrame.Angles(0, 0, math.rad(90 + i * 6)))
+		local steps = 9
+		for i = 1, steps do
+			local k = 0.5 * (1 - (i - 1) / steps)
+			local lean = (i / steps) ^ 2 * s * 0.18
+			cyl(model, root, Vector3.new(s * 0.09, s * k, s * k), hatColor, CFrame.new(-lean, s * (0.72 + i * 0.075), 0) * CFrame.Angles(0, 0, math.rad(90)))
 		end
 	end
 	-- Корона
@@ -222,7 +225,8 @@ function PetFactory:Build(entry, opts): Model
 		rarityText = "🎃 " .. rarityText
 	end
 	line("Rarity", rarityText, if variant then variant.Color else rarity.Color, 16)
-	line("Name", def.Name, Color3.new(1, 1, 1), 22)
+	local lvl = entry.L or 1
+	line("Name", def.Name .. (if lvl > 1 then "  " .. string.rep("⭐", math.min(lvl - 1, 3)) .. (if lvl > 4 then " Lv." .. lvl else "") else ""), Color3.new(1, 1, 1), 22)
 	line("Income", Format.money(self.S.EconomyService:PetIncome(entry)) .. "/s", Color3.fromRGB(120, 255, 120), 18)
 	if opts.Price then
 		line("Price", Format.money(opts.Price), Color3.fromRGB(255, 230, 90), 18)
