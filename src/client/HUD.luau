@@ -215,7 +215,7 @@ function HUD.Build()
 	tl.Parent = toastHolder
 
 	-- Панели
-	local shop = panel("Shop", "🛒 Магазин")
+	local shop = panel("Shop", "🛒 Shop")
 	local list = Instance.new("ScrollingFrame")
 	list.BackgroundTransparency = 1
 	list.Position = UDim2.fromScale(0.04, 0.2)
@@ -247,13 +247,13 @@ function HUD.Build()
 		end)
 	end
 	if not any then
-		text(list, { Text = "Скоро здесь появятся бусты ✨", Size = UDim2.new(1, 0, 0, 40) })
+		text(list, { Text = "Boosts coming soon ✨", Size = UDim2.new(1, 0, 0, 40) })
 	end
 
-	local rebirth = panel("Rebirth", "♻️ Ребёрт")
+	local rebirth = panel("Rebirth", "♻️ Rebirth")
 	local rebInfo = text(rebirth, { Text = "", Size = UDim2.fromScale(0.9, 0.42), Position = UDim2.fromScale(0.05, 0.2), TextColor3 = Color3.new(1, 1, 1) })
 	local Action = Net.event("Action")
-	button(rebirth, { Text = "Сделать ребёрт", Size = UDim2.fromScale(0.6, 0.18), Position = UDim2.fromScale(0.2, 0.72) }, Color3.fromRGB(170, 90, 255), function()
+	button(rebirth, { Text = "Rebirth!", Size = UDim2.fromScale(0.6, 0.18), Position = UDim2.fromScale(0.2, 0.72) }, Color3.fromRGB(170, 90, 255), function()
 		Action:FireServer("Rebirth")
 		rebirth.Visible = false
 	end)
@@ -323,7 +323,7 @@ function HUD.Build()
 	iconButton("👥", "Invite", PINK, function()
 		pcall(function()
 			local options = Instance.new("ExperienceInviteOptions")
-			options.PromptMessage = "Залетай красть слаймов вместе! +10% дохода за друга"
+			options.PromptMessage = "Come steal slimes with me! +10% cash per friend"
 			SocialService:PromptGameInvite(player, options)
 		end)
 	end)
@@ -333,10 +333,10 @@ function HUD.Build()
 		state = s
 		cash.Text = Format.money(s.Cash)
 		income.Text = "+" .. Format.money(s.Income) .. "/s"
-		slots.Text = "🫧 Слаймы: " .. s.UsedSlots .. "/" .. s.Slots
+		slots.Text = "🫧 Slimes: " .. s.UsedSlots .. "/" .. s.Slots
 		speedBtn.Text = if s.SpeedCost < 0 then "MAX" else Format.money(s.SpeedCost)
 		dailyBtn.Text = if s.DailyIn <= 0 then "Claim!" else Format.time(s.DailyIn)
-		rebInfo.Text = ("Ребёртов: %d\nЦена: %s\nНаграда: +%d%% дохода навсегда\n(деньги, слаймы и скорость сбросятся)"):format(
+		rebInfo.Text = ("Rebirths: %d\nCost: %s\nReward: +%d%% cash forever\n(cash, slimes and speed reset)"):format(
 			s.Rebirths,
 			Format.money(s.RebirthCost),
 			math.floor(s.RebirthBonus * 100)

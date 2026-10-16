@@ -42,11 +42,11 @@ function StealService:TrySteal(thief: Player, victim: Player, slot: string)
 		return
 	end
 	if Plot:IsLocked(victimPlot) then
-		self.S.SocialService:Notify(thief, "База закрыта на замок 🔒", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(thief, "This base is locked 🔒", Color3.fromRGB(255, 120, 120))
 		return
 	end
 	if not Plot:GetPlot(thief) or not Plot:FreeSlot(thief) then
-		self.S.SocialService:Notify(thief, "У тебя нет свободного места на базе!", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(thief, "No free space on your base!", Color3.fromRGB(255, 120, 120))
 		return
 	end
 	local char = thief.Character
@@ -82,8 +82,8 @@ function StealService:TrySteal(thief: Player, victim: Player, slot: string)
 	self.S.ProgressionService:ApplySpeed(thief)
 
 	local def = Pets.ById[entry.Id]
-	self.S.SocialService:Notify(victim, "🚨 " .. thief.DisplayName .. " крадёт твоего " .. def.Name .. "! Догони и бонкни!", Color3.fromRGB(255, 70, 70))
-	self.S.SocialService:Notify(thief, "Беги на свою базу! 🏃", Color3.fromRGB(120, 255, 160))
+	self.S.SocialService:Notify(victim, "🚨 " .. thief.DisplayName .. " is stealing your " .. def.Name .. "! Chase and BONK them!", Color3.fromRGB(255, 70, 70))
+	self.S.SocialService:Notify(thief, "Run back to your base! 🏃", Color3.fromRGB(120, 255, 160))
 	self.S.SocialService:PlaySound(victim, "Steal")
 end
 
@@ -117,7 +117,7 @@ function StealService:_finish(thief: Player, success: boolean)
 			tData.Steals += 1
 		end
 		local def = Pets.ById[c.entry.Id]
-		self.S.SocialService:NotifyAll("🦹 " .. thief.DisplayName .. " украл " .. def.Name .. " у " .. c.victim.DisplayName .. "!", Color3.fromRGB(255, 160, 60))
+		self.S.SocialService:NotifyAll("🦹 " .. thief.DisplayName .. " stole " .. def.Name .. " from " .. c.victim.DisplayName .. "!", Color3.fromRGB(255, 160, 60))
 	else
 		-- Возвращаем слайма хозяину
 		if c.original and c.victim.Parent and victimData and victimData.Pets[c.slot] then
@@ -149,7 +149,7 @@ function StealService:Drop(thief: Player, bonker: Player?)
 	end
 	self:_finish(thief, false)
 	if bonker then
-		self.S.SocialService:NotifyAll("💥 " .. bonker.DisplayName .. " бонкнул вора " .. thief.DisplayName .. "!", Color3.fromRGB(120, 200, 255))
+		self.S.SocialService:NotifyAll("💥 " .. bonker.DisplayName .. " bonked the thief " .. thief.DisplayName .. "!", Color3.fromRGB(120, 200, 255))
 	end
 end
 
@@ -241,7 +241,7 @@ function StealService:Start()
 			if not root or not hum or hum.Health <= 0 or not c.model.Parent then
 				self:_finish(thief, false)
 			elseif os.clock() - c.started > Config.StealTimeout then
-				self.S.SocialService:Notify(thief, "Слишком долго — слайм сбежал домой!", Color3.fromRGB(255, 120, 120))
+				self.S.SocialService:Notify(thief, "Too slow — the slime ran home!", Color3.fromRGB(255, 120, 120))
 				self:_finish(thief, false)
 			else
 				local plot = self.S.PlotService:GetPlot(thief)

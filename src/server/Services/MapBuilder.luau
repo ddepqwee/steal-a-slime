@@ -256,7 +256,7 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 	for _, s in { -1, 1 } do
 		part({ Name = "ArchPost", Parent = model, Size = Vector3.new(1.6, 14, 1.6), CFrame = at(s * (ENTRANCE_W / 2 + 0.8), 8, -half), Color = accent, Material = Enum.Material.SmoothPlastic })
 	end
-	local _, signLabels = signBoard(model, at(0, 14.5, -half), Vector3.new(ENTRANCE_W + 6, 4, 0.8), accent, "Свободная база")
+	local _, signLabels = signBoard(model, at(0, 14.5, -half), Vector3.new(ENTRANCE_W + 6, 4, 0.8), accent, "Free Base")
 
 	-- Силовое поле замка: по периметру, появляется только когда база закрыта
 	local lockWalls = {}

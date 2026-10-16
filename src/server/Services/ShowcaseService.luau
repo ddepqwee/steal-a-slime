@@ -22,7 +22,7 @@ function ShowcaseService:Start()
 	if not self:Enabled() then
 		return
 	end
-	warn("[Showcase] режим витрины включён")
+	warn("[Showcase] showcase mode on")
 	local top = {}
 	for i = #Pets.List, 1, -1 do
 		table.insert(top, Pets.List[i])

@@ -70,16 +70,16 @@ Config.AnnounceFromRarity = 5 -- с Legendary объявляем на весь �
 -- Монетизация. Создай пассы/продукты на create.roblox.com и впиши сюда их ID.
 -- Пока Id = 0, кнопка в магазине скрыта.
 Config.GamePasses = {
-	DoubleCash = { Id = 0, Title = "2x Cash", Desc = "Двойной доход навсегда", Price = 199 },
-	VIP = { Id = 0, Title = "VIP", Desc = "+25% удачи, +скорость, VIP-тег", Price = 299 },
-	ExtraSlots = { Id = 0, Title = "+4 Slots", Desc = "Больше места на базе", Price = 149 },
-	LongLock = { Id = 0, Title = "Mega Lock", Desc = "Замок базы держится в 2 раза дольше", Price = 99 },
+	DoubleCash = { Id = 0, Title = "2x Cash", Desc = "Double cash forever", Price = 199 },
+	VIP = { Id = 0, Title = "VIP", Desc = "+25% luck, +speed, VIP tag", Price = 299 },
+	ExtraSlots = { Id = 0, Title = "+4 Slots", Desc = "More room on your base", Price = 149 },
+	LongLock = { Id = 0, Title = "Mega Lock", Desc = "Base lock lasts 2x longer", Price = 99 },
 }
 Config.Products = {
-	CashSmall = { Id = 0, Title = "Cash Pack", Desc = "10 минут дохода", Kind = "Cash", Minutes = 10, Min = 1_000, Price = 29 },
-	CashBig = { Id = 0, Title = "Cash Vault", Desc = "1 час дохода", Kind = "Cash", Minutes = 60, Min = 10_000, Price = 129 },
-	LuckySpawn = { Id = 0, Title = "Lucky Spawn", Desc = "Следующий слайм: Legendary 75% · Mythic 20.8% · Secret 4.2% (+шанс GOLD/RAINBOW)", Kind = "LuckySpawn", Price = 79 },
-	ServerLuck = { Id = 0, Title = "Server Luck x2", Desc = "15 минут удачи всему серверу", Kind = "ServerLuck", Minutes = 15, Price = 99 },
+	CashSmall = { Id = 0, Title = "Cash Pack", Desc = "10 minutes of income", Kind = "Cash", Minutes = 10, Min = 1_000, Price = 29 },
+	CashBig = { Id = 0, Title = "Cash Vault", Desc = "1 hour of income", Kind = "Cash", Minutes = 60, Min = 10_000, Price = 129 },
+	LuckySpawn = { Id = 0, Title = "Lucky Spawn", Desc = "Next slime: Legendary 75% · Mythic 20.8% · Secret 4.2% (+GOLD/RAINBOW chance)", Kind = "LuckySpawn", Price = 79 },
+	ServerLuck = { Id = 0, Title = "Server Luck x2", Desc = "15 min of luck for the whole server", Kind = "ServerLuck", Minutes = 15, Price = 99 },
 }
 
 -- Расписание авто-ивентов (UTC). Работают сами, без апдейтов.

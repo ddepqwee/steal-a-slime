@@ -75,7 +75,7 @@ function EventService:Start()
 		end
 		if text ~= lastText then
 			if text ~= "" then
-				self.S.SocialService:NotifyAll("⚡ Ивент: " .. text .. "!", Color3.fromRGB(255, 230, 90))
+				self.S.SocialService:NotifyAll("⚡ Event: " .. text .. "!", Color3.fromRGB(255, 230, 90))
 			end
 			lastText = text
 		end

@@ -140,7 +140,7 @@ function EconomyService:Start()
 			if earned > 0 then
 				self:AddCash(player, earned)
 				task.delay(3, function()
-					self.S.SocialService:Notify(player, "Пока тебя не было, слаймы заработали " .. Format.money(earned) .. " 💤", Color3.fromRGB(150, 220, 255))
+					self.S.SocialService:Notify(player, "While you were away, your slimes earned " .. Format.money(earned) .. " 💤", Color3.fromRGB(150, 220, 255))
 				end)
 			end
 		end

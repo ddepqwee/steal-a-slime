@@ -86,7 +86,7 @@ function PlotService:RenderSlot(player: Player, slot: string)
 	local value = self.S.EconomyService:PetValue(entry)
 	local steal = Instance.new("ProximityPrompt")
 	steal.Name = "StealPrompt"
-	steal.ActionText = "Украсть"
+	steal.ActionText = "Steal"
 	steal.ObjectText = model.Name
 	steal.HoldDuration = Config.StealHold
 	steal.MaxActivationDistance = 9
@@ -100,7 +100,7 @@ function PlotService:RenderSlot(player: Player, slot: string)
 
 	local sell = Instance.new("ProximityPrompt")
 	sell.Name = "SellPrompt"
-	sell.ActionText = "Продать " .. Format.money(value * Config.SellRate)
+	sell.ActionText = "Sell " .. Format.money(value * Config.SellRate)
 	sell.ObjectText = model.Name
 	sell.HoldDuration = 0.8
 	sell.MaxActivationDistance = 9
@@ -185,7 +185,7 @@ function PlotService:Sell(player: Player, slot: string)
 	local amount = math.floor(self.S.EconomyService:PetValue(entry) * Config.SellRate)
 	self:RemovePet(player, slot)
 	self.S.EconomyService:AddCash(player, amount)
-	self.S.SocialService:Notify(player, "Продано за " .. Format.money(amount), Color3.fromRGB(255, 230, 90))
+	self.S.SocialService:Notify(player, "Sold for " .. Format.money(amount), Color3.fromRGB(255, 230, 90))
 end
 
 function PlotService:ClearAll(player: Player)
@@ -217,10 +217,10 @@ function PlotService:Lock(player: Player)
 		local root = other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart")
 		if root and self.S.MapBuilder:IsInPlot(plot, root.Position) then
 			other.Character:PivotTo(plot.CFrame * CFrame.new(0, 4, -plot.Half - 8))
-			self.S.SocialService:Notify(other, "Хозяин закрыл базу — тебя выкинуло! 🚪", Color3.fromRGB(255, 160, 120))
+			self.S.SocialService:Notify(other, "The owner locked the base — you got kicked out! 🚪", Color3.fromRGB(255, 160, 120))
 		end
 	end
-	self.S.SocialService:Notify(player, "🔒 База закрыта на " .. duration .. " сек", Color3.fromRGB(255, 120, 140))
+	self.S.SocialService:Notify(player, "🔒 Base locked for " .. duration .. "s", Color3.fromRGB(255, 120, 140))
 end
 
 function PlotService:_setWalls(plot, on: boolean)
@@ -246,7 +246,7 @@ function PlotService:_tickLocks()
 			if plot.Model:GetAttribute("Locked") then
 				self:_setWalls(plot, false)
 				if owner then
-					self.S.SocialService:Notify(owner, "⚠️ Замок базы открылся!", Color3.fromRGB(255, 180, 80))
+					self.S.SocialService:Notify(owner, "⚠️ Your base lock is off!", Color3.fromRGB(255, 180, 80))
 				end
 			end
 			local cd = (plot.LockReadyAt or 0) - os.clock()
@@ -279,7 +279,7 @@ function PlotService:_release(player: Player)
 	plot.LockReadyAt = 0
 	self:_setWalls(plot, false)
 	plot.Model:SetAttribute("OwnerUserId", nil)
-	self:_setSign(plot, "Свободная база")
+	self:_setSign(plot, "Free Base")
 	plotOf[player] = nil
 end
 
@@ -297,7 +297,7 @@ function PlotService:Start()
 	self.S.DataService:OnLoaded(function(player)
 		local plot = self:_assign(player)
 		if not plot then
-			player:Kick("Сервер заполнен, попробуй другой 🙏")
+			player:Kick("Server is full, try another one 🙏")
 			return
 		end
 		self:RenderAll(player)

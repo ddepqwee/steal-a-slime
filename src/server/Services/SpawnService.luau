@@ -83,7 +83,7 @@ function SpawnService:Spawn(minRarity: number?, forced: any?)
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "BuyPrompt"
-	prompt.ActionText = "Купить " .. Format.money(price)
+	prompt.ActionText = "Buy " .. Format.money(price)
 	prompt.ObjectText = def.Name
 	prompt.HoldDuration = 0
 	prompt.MaxActivationDistance = 12
@@ -99,7 +99,7 @@ function SpawnService:Spawn(minRarity: number?, forced: any?)
 	if def.Rarity >= Config.AnnounceFromRarity or entry.V == "Rainbow" then
 		local rarityName = Config.Rarities[def.Rarity].Name
 		local prefix = if entry.V then Config.Variants[entry.V].Label .. " " else ""
-		self.S.SocialService:NotifyAll("✨ На дороге появился " .. prefix .. rarityName .. " " .. def.Name .. "! ✨", Config.Rarities[def.Rarity].Color, "Legendary")
+		self.S.SocialService:NotifyAll("✨ A " .. prefix .. rarityName .. " " .. def.Name .. " appeared on the road! ✨", Config.Rarities[def.Rarity].Color, "Legendary")
 	end
 	return item
 end
@@ -113,11 +113,11 @@ function SpawnService:TryBuy(player: Player, item)
 		return
 	end
 	if not Plot:FreeSlot(player) then
-		self.S.SocialService:Notify(player, "База заполнена! Продай слайма или возьми +4 слота", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "Base is full! Sell a slime or get +4 Slots", Color3.fromRGB(255, 120, 120))
 		return
 	end
 	if not self.S.EconomyService:TrySpend(player, item.price) then
-		self.S.SocialService:Notify(player, "Не хватает денег 💸", Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "Not enough cash 💸", Color3.fromRGB(255, 120, 120))
 		return
 	end
 	item.sold = true

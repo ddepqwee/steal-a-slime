@@ -199,7 +199,7 @@ function DirectorService:Run(player: Player)
 	w.Part1 = carried.PrimaryPart
 	w.Parent = carried.PrimaryPart
 	carried.Parent = thief
-	self.S.SocialService:Notify(player, "🚨 " .. thiefName .. " крадёт твоего " .. heroDef.Name .. "! Догони и бонкни!", Color3.fromRGB(255, 70, 70))
+	self.S.SocialService:Notify(player, "🚨 " .. thiefName .. " is stealing your " .. heroDef.Name .. "! Chase and BONK them!", Color3.fromRGB(255, 70, 70))
 	send(player, "Stolen", { Model = thief, Name = thiefName, Pet = heroDef.Name })
 
 	-- Сцена 4: побег и погоня
@@ -219,7 +219,7 @@ function DirectorService:Run(player: Player)
 	hum.Sit = true
 	local root = thief:FindFirstChild("HumanoidRootPart")
 	root.AssemblyLinearVelocity = (root.Position - (player.Character and player.Character:GetPivot().Position or root.Position)).Unit * 40 + Vector3.new(0, 35, 0)
-	self.S.SocialService:NotifyAll("💥 " .. player.DisplayName .. " бонкнул вора " .. thiefName .. "!", Color3.fromRGB(120, 200, 255))
+	self.S.SocialService:NotifyAll("💥 " .. player.DisplayName .. " bonked the thief " .. thiefName .. "!", Color3.fromRGB(120, 200, 255))
 	if original then
 		original.Parent = plot.Model
 	else
@@ -236,7 +236,7 @@ function DirectorService:Start()
 	if not self:Enabled() then
 		return
 	end
-	warn("[Director] режим режиссёра включён — F9 запускает сцену")
+	warn("[Director] director mode on — F9 starts the scene")
 	Remote.OnServerEvent:Connect(function(player, action)
 		if action == "Start" then
 			task.spawn(self.Run, self, player)

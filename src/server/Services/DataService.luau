@@ -51,7 +51,7 @@ function DataService:Init(S)
 	if ok then
 		store = result
 	else
-		warn("[Data] DataStore недоступен (в Studio включи API Services):", result)
+		warn("[Data] DataStore unavailable (enable API Services in Studio):", result)
 	end
 end
 
@@ -143,7 +143,7 @@ function DataService:_onJoin(player: Player)
 		return
 	end
 	if not data then
-		player:Kick("Не удалось загрузить сохранение. Перезайди через минуту 🙏")
+		player:Kick("Could not load your save. Please rejoin in a minute 🙏")
 		return
 	end
 	self.Profiles[player] = data

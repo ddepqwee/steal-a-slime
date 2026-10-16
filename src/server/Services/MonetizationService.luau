@@ -65,13 +65,13 @@ end
 
 handlers.LuckySpawn = function(self, player)
 	self.S.SpawnService:QueueLucky(player)
-	self.S.SocialService:NotifyAll(player.DisplayName .. " купил LUCKY SPAWN! 🍀 Следующий слайм — легендарный!", Color3.fromRGB(255, 200, 0))
+	self.S.SocialService:NotifyAll(player.DisplayName .. " bought LUCKY SPAWN! 🍀 Next slime is LEGENDARY!", Color3.fromRGB(255, 200, 0))
 	return true
 end
 
 handlers.ServerLuck = function(self, player, info)
 	self.S.EventService:AddServerLuck(info.Minutes * 60)
-	self.S.SocialService:NotifyAll(player.DisplayName .. " включил SERVER LUCK x2 для всех! 🎉", Color3.fromRGB(80, 255, 200))
+	self.S.SocialService:NotifyAll(player.DisplayName .. " activated SERVER LUCK x2 for everyone! 🎉", Color3.fromRGB(80, 255, 200))
 	return true
 end
 
@@ -91,13 +91,13 @@ function MonetizationService:_processReceipt(receipt)
 	local name = productByid[receipt.ProductId]
 	local info = name and Config.Products[name]
 	if not info then
-		warn("[Shop] неизвестный продукт", receipt.ProductId)
+		warn("[Shop] unknown product", receipt.ProductId)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	local handler = handlers[info.Kind]
 	local ok, granted = pcall(handler, self, player, info)
 	if not ok or not granted then
-		warn("[Shop] ошибка выдачи", name, granted)
+		warn("[Shop] grant error", name, granted)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	table.insert(data.Receipts, rid)
@@ -120,7 +120,7 @@ function MonetizationService:Start()
 			self.S.EconomyService:Refresh(player)
 			self.S.ProgressionService:ApplySpeed(player)
 			self.S.PlotService:RefreshSlots(player)
-			self.S.SocialService:NotifyAll(player.DisplayName .. " купил " .. Config.GamePasses[name].Title .. "! ⭐", Color3.fromRGB(255, 220, 80))
+			self.S.SocialService:NotifyAll(player.DisplayName .. " bought " .. Config.GamePasses[name].Title .. "! ⭐", Color3.fromRGB(255, 220, 80))
 		end
 	end)
 

@@ -68,7 +68,7 @@ function SocialService:ClaimDaily(player: Player)
 	local now = os.time()
 	local since = now - data.LastDaily
 	if since < Config.DailyCooldown then
-		self:Notify(player, "Следующая награда через " .. Format.time(Config.DailyCooldown - since), Color3.fromRGB(255, 200, 120))
+		self:Notify(player, "Next reward in " .. Format.time(Config.DailyCooldown - since), Color3.fromRGB(255, 200, 120))
 		return
 	end
 	if since < Config.DailyCooldown * 2.4 then
@@ -79,7 +79,7 @@ function SocialService:ClaimDaily(player: Player)
 	data.LastDaily = now
 	local reward = math.max(500 * data.DailyStreak, self.S.EconomyService:GetIncome(player) * 120 * data.DailyStreak)
 	self.S.EconomyService:AddCash(player, reward)
-	self:Notify(player, "🎁 День " .. data.DailyStreak .. ": +" .. Format.money(reward) .. "! Заходи завтра за большим", Color3.fromRGB(255, 220, 90))
+	self:Notify(player, "🎁 Day " .. data.DailyStreak .. ": +" .. Format.money(reward) .. "! Come back tomorrow for more", Color3.fromRGB(255, 220, 90))
 end
 
 function SocialService:Start()
@@ -90,13 +90,13 @@ function SocialService:Start()
 			if not (ok and inGroup) then
 				task.delay(20, function()
 					if player.Parent then
-						self:Notify(player, "Вступи в группу игры → +10% дохода навсегда! 💜", Color3.fromRGB(200, 160, 255))
+						self:Notify(player, "Join the group → +10% cash forever! 💜", Color3.fromRGB(200, 160, 255))
 					end
 				end)
 			end
 		end
 		self:RecalcFriends()
-		self:Notify(player, "Добро пожаловать в " .. Config.GameName .. " 🫧 Покупай слаймов на дороге!", Color3.fromRGB(255, 170, 240))
+		self:Notify(player, "Welcome to " .. Config.GameName .. " 🫧 Buy slimes on the road!", Color3.fromRGB(255, 170, 240))
 	end)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(function()
@@ -107,7 +107,7 @@ function SocialService:Start()
 	-- Подсказки для новичков и напоминание про друзей
 	while true do
 		task.wait(240)
-		self:NotifyAll("👥 Играй с друзьями: +10% дохода за каждого друга на сервере!", Color3.fromRGB(160, 220, 255))
+		self:NotifyAll("👥 Play with friends: +10% cash for each friend on the server!", Color3.fromRGB(160, 220, 255))
 	end
 end
 

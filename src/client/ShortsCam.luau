@@ -92,7 +92,7 @@ function ShortsCam.Start(HUD)
 		end
 	end)
 
-	print("[ShortsCam] F6 — скрыть UI, F7 — сменить камеру")
+	print("[ShortsCam] F6 — hide UI, F7 — switch camera")
 end
 
 return ShortsCam

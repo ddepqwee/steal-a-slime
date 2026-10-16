@@ -54,9 +54,9 @@ function ProgressionService:BuySpeed(player: Player)
 	if self.S.EconomyService:TrySpend(player, cost) then
 		data.SpeedLevel += 1
 		self:ApplySpeed(player)
-		self.S.SocialService:Notify(player, "⚡ Скорость: уровень " .. data.SpeedLevel, Color3.fromRGB(120, 220, 255))
+		self.S.SocialService:Notify(player, "⚡ Speed: level " .. data.SpeedLevel, Color3.fromRGB(120, 220, 255))
 	else
-		self.S.SocialService:Notify(player, "Нужно " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "You need " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
 	end
 end
 
@@ -67,7 +67,7 @@ function ProgressionService:Rebirth(player: Player)
 	end
 	local cost = self:RebirthCost(data)
 	if data.Cash < cost then
-		self.S.SocialService:Notify(player, "Для ребёрта нужно " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
+		self.S.SocialService:Notify(player, "Rebirth requires " .. Format.money(cost), Color3.fromRGB(255, 120, 120))
 		return
 	end
 	self.S.StealService:CancelForVictim(player)
@@ -79,7 +79,7 @@ function ProgressionService:Rebirth(player: Player)
 	self:ApplySpeed(player)
 	self.S.EconomyService:Refresh(player)
 	self.S.EconomyService:AddCash(player, 0)
-	self.S.SocialService:NotifyAll("♻️ " .. player.DisplayName .. " сделал ребёрт #" .. data.Rebirths .. "!", Color3.fromRGB(200, 140, 255))
+	self.S.SocialService:NotifyAll("♻️ " .. player.DisplayName .. " rebirthed! (#" .. data.Rebirths .. ")", Color3.fromRGB(200, 140, 255))
 	self.S.DataService:Save(player, false)
 end
 
