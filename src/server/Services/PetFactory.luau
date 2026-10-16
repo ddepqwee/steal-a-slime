@@ -56,6 +56,22 @@ local function cyl(model: Model, root: BasePart, size: Vector3, color: Color3, o
 	return p
 end
 
+local function blk(model: Model, root: BasePart, size: Vector3, color: Color3, offset: CFrame, material: Enum.Material?): Part
+	local p = Instance.new("Part")
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.Anchored = false
+	p.CFrame = root.CFrame * offset
+	p.Parent = model
+	weld(root, p)
+	return p
+end
+
 -- entry = { Id, V }, opts = { Price = number? }
 function PetFactory:Build(entry, opts): Model
 	opts = opts or {}
@@ -172,6 +188,48 @@ function PetFactory:Build(entry, opts): Model
 		crown.CFrame = root.CFrame * CFrame.new(0, s * 0.78, 0) * CFrame.Angles(0, 0, math.rad(90))
 		crown.Parent = model
 		weld(root, crown)
+	end
+
+	-- Аксессуары (пак 7)
+	if def.Horns then
+		for _, side in { -1, 1 } do
+			for i = 1, 3 do
+				local k = 1 - (i - 1) * 0.3
+				cyl(model, root, Vector3.new(s * 0.1, s * 0.16 * k, s * 0.16 * k), Color3.fromRGB(250, 240, 220), CFrame.new(side * (s * 0.24 + i * s * 0.03), s * (0.62 + i * 0.08), 0) * CFrame.Angles(0, 0, math.rad(90 - side * 20)))
+			end
+		end
+	end
+	if def.Antenna then
+		for _, side in { -1, 1 } do
+			cyl(model, root, Vector3.new(s * 0.4, s * 0.05, s * 0.05), Color3.fromRGB(40, 40, 50), CFrame.new(side * s * 0.16, s * 0.82, 0) * CFrame.Angles(0, 0, math.rad(90 + side * 18)))
+			ball(model, root, s * 0.13, color:Lerp(Color3.new(1, 1, 1), 0.4), CFrame.new(side * s * 0.23, s * 1.02, 0), Enum.Material.Neon)
+		end
+	end
+	if def.Wings then
+		for _, side in { -1, 1 } do
+			local w = blk(model, root, Vector3.new(s * 0.06, s * 0.5, s * 0.75), Color3.fromRGB(255, 255, 255), CFrame.new(side * s * 0.55, s * 0.25, s * 0.15) * CFrame.Angles(math.rad(-15), 0, math.rad(side * -35)), Enum.Material.SmoothPlastic)
+			w.Transparency = 0.15
+		end
+	end
+	if def.Bow then
+		local bowColor = Color3.fromRGB(255, 80, 150)
+		for _, side in { -1, 1 } do
+			blk(model, root, Vector3.new(s * 0.22, s * 0.16, s * 0.08), bowColor, CFrame.new(side * s * 0.13, s * 0.7, -s * 0.1) * CFrame.Angles(0, 0, math.rad(side * 20)))
+		end
+		ball(model, root, s * 0.09, bowColor, CFrame.new(0, s * 0.7, -s * 0.1))
+	end
+	if def.Shades then
+		blk(model, root, Vector3.new(s * 0.62, s * 0.14, s * 0.06), Color3.fromRGB(15, 15, 20), CFrame.new(0, s * 0.13, -s * 0.56), Enum.Material.Glass)
+	end
+	if def.Spikes then
+		for i = 0, 4 do
+			local a = math.rad(-60 + i * 30)
+			cyl(model, root, Vector3.new(s * 0.18, s * 0.09, s * 0.09), color:Lerp(Color3.new(0, 0, 0), 0.35), CFrame.new(math.sin(a) * s * 0.3, s * 0.6 + math.cos(a) * s * 0.12, s * 0.12) * CFrame.Angles(0, 0, math.rad(90) - a))
+		end
+	end
+	if def.Halo then
+		local halo = cyl(model, root, Vector3.new(s * 0.05, s * 0.55, s * 0.55), Color3.fromRGB(255, 240, 140), CFrame.new(0, s * 1.05, 0) * CFrame.Angles(0, 0, math.rad(90)))
+		halo.Material = Enum.Material.Neon
 	end
 
 	-- Свечение по редкости

@@ -47,6 +47,10 @@ function ZoneService:Enter(player: Player, z)
 end
 
 function ZoneService:Return(player: Player)
+	-- нельзя «телепортировать» украденного слайма домой
+	if player:GetAttribute("Carrying") then
+		self.S.StealService:Drop(player)
+	end
 	local plot = self.S.PlotService:GetPlot(player)
 	if plot and player.Character then
 		player.Character:PivotTo(plot.SpawnCFrame)
@@ -193,6 +197,19 @@ function ZoneService:Start()
 	end)
 	Players.PlayerRemoving:Connect(function(p)
 		debounce[p] = nil
+	end)
+	-- упал в океан → домой на базу
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			for _, p in Players:GetPlayers() do
+				local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+				if r and r.Position.Y < -1.5 then
+					self:Return(p)
+					self.S.SocialService:Notify(p, "🌊 Splash! Back to your base", Color3.fromRGB(120, 200, 255))
+				end
+			end
+		end
 	end)
 	while true do
 		task.wait(30)

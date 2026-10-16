@@ -116,7 +116,7 @@ function MapBuilder:_lighting()
 	Lighting.GlobalShadows = true
 	Lighting.ShadowSoftness = 0.3
 	local atm = Instance.new("Atmosphere")
-	atm.Density = 0.32
+	atm.Density = 0.22
 	atm.Offset = 0.2
 	atm.Haze = 0.6
 	atm.Glare = 0.3
@@ -144,7 +144,17 @@ function MapBuilder:_lighting()
 end
 
 function MapBuilder:_ground()
-	part({ Name = "Ground", Size = Vector3.new(900, 4, 900), Position = Vector3.new(0, -2, 0), Color = Color3.fromRGB(110, 205, 95), Material = Enum.Material.Grass })
+	-- главный остров + песчаный берег + океан вокруг
+	part({ Name = "Ground", Size = Vector3.new(600, 6, 460), Position = Vector3.new(0, -3, 0), Color = Color3.fromRGB(110, 205, 95), Material = Enum.Material.Grass })
+	part({ Name = "Beach", Size = Vector3.new(640, 6, 500), Position = Vector3.new(0, -3.6, 0), Color = Color3.fromRGB(245, 225, 160), Material = Enum.Material.Sand })
+	local terrain = Workspace.Terrain
+	terrain.WaterColor = Color3.fromRGB(60, 170, 220)
+	terrain.WaterTransparency = 0.35
+	terrain.WaterWaveSize = 0.2
+	terrain.WaterReflectance = 0.6
+	pcall(function()
+		terrain:FillBlock(CFrame.new(0, -14, 0), Vector3.new(3200, 20, 3200), Enum.Material.Water)
+	end)
 	local roadLen = PLOT_SPACING * 4 + 70
 	-- Дорога: тёмная лента + светящиеся бортики + бегущие стрелки
 	part({ Name = "Road", Size = Vector3.new(roadLen, 0.4, ROAD_WIDTH), Position = Vector3.new(0, 0.2, 0), Color = Color3.fromRGB(55, 45, 80), Material = Enum.Material.SmoothPlastic })
@@ -276,6 +286,7 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 
 	-- Пьедесталы: круглые подиумы с неоновым кольцом
 	local pedestals = {}
+	local pedFx = {}
 	local slot = 0
 	for row = 1, 3 do
 		for col = 1, COLS do
@@ -283,8 +294,17 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 			local x = (col - (COLS + 1) / 2) * 7
 			local z = ({ 6, 18, -6 })[row]
 			local base = at(x, 0, z)
-			part({ Name = "PedRing", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 6, 6), CFrame = base * CFrame.new(0, 1.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = accent, Material = Enum.Material.Neon, CanCollide = false })
-			local ped = part({ Name = "Pedestal" .. slot, Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 5, 5), CFrame = base * CFrame.new(0, 1.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 255, 255), Material = Enum.Material.SmoothPlastic })
+			local ring = part({ Name = "PedRing", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 6.4, 6.4), CFrame = base * CFrame.new(0, 1.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = accent, Material = Enum.Material.Neon, CanCollide = false })
+			local ped = part({ Name = "Pedestal" .. slot, Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 5, 5), CFrame = base * CFrame.new(0, 1.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 255, 255), Material = Enum.Material.Marble })
+			-- светящийся ободок сверху + столб света (включается под редких слаймов)
+			local rim = part({ Name = "PedRim", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.25, 5.3, 5.3), CFrame = base * CFrame.new(0, 2.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.6 })
+			local beam = part({ Name = "PedBeam", Parent = model, Shape = Enum.PartType.Cylinder, Size = Vector3.new(16, 4.4, 4.4), CFrame = base * CFrame.new(0, 10.4, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = accent, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false, Transparency = 1, CastShadow = false })
+			local glow = Instance.new("PointLight")
+			glow.Range = 0
+			glow.Brightness = 2
+			glow.Parent = rim
+			ped:SetAttribute("Accent", accent)
+			pedFx[slot] = { Ring = ring, Rim = rim, Beam = beam, Light = glow }
 			ped:SetAttribute("Slot", slot)
 			pedestals[slot] = ped
 		end
@@ -299,6 +319,7 @@ function MapBuilder:_plot(index: number, center: Vector3, facing: Vector3)
 	local trapPad = part({ Name = "TrapPad", Parent = model, Size = Vector3.new(ENTRANCE_W - 1, 0.2, 5), CFrame = at(0, 1.1, -half + 3.5), Color = Color3.fromRGB(170, 70, 255), Material = Enum.Material.Neon, Transparency = 1, CanCollide = false, CanTouch = false })
 
 	local plot = {
+		PedFx = pedFx,
 		TrapPad = trapPad,
 		Index = index,
 		CFrame = cf,
@@ -319,8 +340,8 @@ function MapBuilder:_trees()
 	local leaves = { Color3.fromRGB(255, 160, 210), Color3.fromRGB(130, 225, 110), Color3.fromRGB(180, 140, 255), Color3.fromRGB(255, 200, 110) }
 	local placed = 0
 	while placed < 110 do
-		local pos = Vector3.new(rng:NextNumber(-420, 420), 0, rng:NextNumber(-420, 420))
-		local inPlay = (math.abs(pos.X) < 245 and math.abs(pos.Z) < 115) or (math.abs(pos.X) < 300 and math.abs(pos.Z) > 255) or (pos.X > 200 and math.abs(pos.Z) < 60)
+		local pos = Vector3.new(rng:NextNumber(-285, 285), 0, rng:NextNumber(-215, 215))
+		local inPlay = (math.abs(pos.X) < 245 and math.abs(pos.Z) < 115) or (pos.X > 200 and math.abs(pos.Z) < 60)
 		if not inPlay then
 			placed += 1
 			local h = rng:NextNumber(9, 18)
@@ -395,7 +416,7 @@ function MapBuilder:_halloween()
 	if atm then
 		atm.Color = Color3.fromRGB(255, 170, 120)
 		atm.Decay = Color3.fromRGB(120, 60, 160)
-		atm.Density = 0.38
+		atm.Density = 0.26
 	end
 	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
 	if cc then
@@ -429,31 +450,130 @@ function MapBuilder:_halloween()
 	label(sign, "🎃 HALLOWEEN EVENT 🎃", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(255, 150, 40))
 end
 
--- 🌍 Острова-зоны со своими дорогами
+-- 🌍 Острова ребёртов: отдельные острова со своими дорогами, видны с главного острова
+local function bigSign(pos: Vector3, text: string, color: Color3)
+	local anchor = part({ Name = "IslandSign", Size = Vector3.new(1, 1, 1), Position = pos, Transparency = 1, CanCollide = false })
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromScale(70, 18)
+	bb.MaxDistance = 3000
+	bb.LightInfluence = 0
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Font = Enum.Font.FredokaOne
+	t.TextScaled = true
+	t.TextColor3 = color
+	t.TextStrokeTransparency = 0
+	t.Text = text
+	t.Parent = bb
+	bb.Parent = anchor
+end
+
+function MapBuilder:_landmark(zone, c: Vector3, len: number, rng: Random)
+	local top = c.Y + 3
+	if zone.Id == "Lava" then
+		-- вулкан
+		local vx = c.X + len * 0.3
+		local vz = c.Z - 42 * math.sign(c.Z)
+		for i = 0, 6 do
+			local r = 70 - i * 9
+			part({ Name = "Volcano", Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, r, r), CFrame = CFrame.new(vx, top + 4.5 + i * 9, vz) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(55 - i * 3, 35, 30), Material = Enum.Material.Basalt })
+		end
+		local crater = part({ Name = "Crater", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 12, 12), CFrame = CFrame.new(vx, top + 63.6, vz) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 100, 10), Material = Enum.Material.Neon })
+		local fire = Instance.new("Fire")
+		fire.Size = 30
+		fire.Heat = 30
+		fire.Parent = crater
+		local smoke = Instance.new("Smoke")
+		smoke.Size = 40
+		smoke.RiseVelocity = 12
+		smoke.Opacity = 0.15
+		smoke.Color = Color3.fromRGB(60, 50, 50)
+		smoke.Parent = crater
+		local l = Instance.new("PointLight")
+		l.Color = Color3.fromRGB(255, 120, 30)
+		l.Range = 60
+		l.Brightness = 3
+		l.Parent = crater
+	elseif zone.Id == "Crystal" then
+		-- кристальный шпиль
+		local sx = c.X - len * 0.3
+		local sz = c.Z - 42 * math.sign(c.Z)
+		for k = 1, 5 do
+			local h = if k == 1 then 90 else rng:NextNumber(30, 55)
+			local off = if k == 1 then Vector3.zero else Vector3.new(rng:NextNumber(-14, 14), 0, rng:NextNumber(-14, 14))
+			part({ Name = "Spire", Size = Vector3.new(if k == 1 then 12 else 6, h, if k == 1 then 12 else 6), CFrame = CFrame.new(Vector3.new(sx, top + h / 2 - 2, sz) + off) * CFrame.Angles(rng:NextNumber(-0.15, 0.15), rng:NextNumber(0, 3), rng:NextNumber(-0.15, 0.15)), Color = if k % 2 == 0 then Color3.fromRGB(190, 120, 255) else Color3.fromRGB(120, 220, 255), Material = Enum.Material.Neon, Transparency = 0.1 })
+		end
+	elseif zone.Id == "Cloud" then
+		-- радуга-арка и облачные холмы
+		local colors = { Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 170, 60), Color3.fromRGB(255, 240, 80), Color3.fromRGB(90, 230, 110), Color3.fromRGB(80, 160, 255), Color3.fromRGB(170, 90, 255) }
+		for band, col in colors do
+			local r = 60 - band * 4
+			for k = 0, 20 do
+				local a = k / 20 * math.pi
+				part({ Name = "Rainbow", Size = Vector3.new(4, 4.5, 4), Position = Vector3.new(c.X + math.cos(a) * r, top + math.sin(a) * r, c.Z + 48), Color = col, Material = Enum.Material.Neon, CanCollide = false })
+			end
+		end
+		for _ = 1, 30 do
+			local sz = rng:NextNumber(14, 28)
+			part({ Name = "CloudPuff", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz, sz), Position = Vector3.new(c.X + rng:NextNumber(-len / 2 - 20, len / 2 + 20), c.Y - rng:NextNumber(2, 10), c.Z + (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(55, 75)), Color = Color3.new(1, 1, 1), CastShadow = false })
+		end
+	elseif zone.Id == "Cosmic" then
+		-- планеты с кольцами и звёзды
+		for k = 1, 4 do
+			local r = rng:NextNumber(16, 34)
+			local pos = Vector3.new(c.X + rng:NextNumber(-len / 2, len / 2), top + rng:NextNumber(45, 90), c.Z + rng:NextNumber(-90, 90))
+			local col = ({ Color3.fromRGB(255, 120, 60), Color3.fromRGB(90, 200, 255), Color3.fromRGB(200, 90, 255), Color3.fromRGB(255, 220, 120) })[k]
+			part({ Name = "Planet", Shape = Enum.PartType.Ball, Size = Vector3.new(r, r, r), Position = pos, Color = col, Material = Enum.Material.Neon, CanCollide = false })
+			part({ Name = "PlanetRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, r * 1.8, r * 1.8), CFrame = CFrame.new(pos) * CFrame.Angles(math.rad(70), 0, math.rad(90)), Color = col:Lerp(Color3.new(1, 1, 1), 0.4), Material = Enum.Material.Neon, Transparency = 0.4, CanCollide = false })
+		end
+		local stars = part({ Name = "Starfield", Size = Vector3.new(len, 1, 200), Position = Vector3.new(c.X, top + 60, c.Z), Transparency = 1, CanCollide = false })
+		local pe = Instance.new("ParticleEmitter")
+		pe.Rate = 40
+		pe.Lifetime = NumberRange.new(4, 7)
+		pe.Speed = NumberRange.new(0, 1)
+		pe.LightEmission = 1
+		pe.Size = NumberSequence.new(0.6, 0)
+		pe.Parent = stars
+	end
+end
+
 function MapBuilder:_zones()
 	self.ZonePads = {}
 	for zi, zone in Config.Zones do
-		local zc = zone.Z
-		local len = 420
-		local isLava = zone.Id == "Lava"
-		part({ Name = "ZoneFloor", Size = Vector3.new(len + 40, 3, 120), Position = Vector3.new(0, 1.5, zc), Color = zone.Floor, Material = if isLava then Enum.Material.Basalt else Enum.Material.Glacier })
-		part({ Name = "ZoneRoad", Size = Vector3.new(len, 0.4, ROAD_WIDTH), Position = Vector3.new(0, 3.2, zc), Color = zone.Road })
+		local c = Vector3.new(zone.X, zone.Y, zone.Z)
+		local len = 380
+		local top = c.Y + 3
+		local floating = c.Y > 10
+		local rng = Random.new(100 + zi)
+		-- тело острова
+		part({ Name = "IslandTop", Size = Vector3.new(len + 60, 14, 150), Position = Vector3.new(c.X, top - 7, c.Z), Color = zone.Floor, Material = zone.Mat })
+		part({ Name = "IslandEdge", Size = Vector3.new(len + 64, 4, 154), Position = Vector3.new(c.X, top - 12, c.Z), Color = zone.Floor:Lerp(Color3.new(0, 0, 0), 0.3), Material = zone.Mat })
+		if floating then
+			-- скалистое «днище» парящего острова
+			for k = 1, 4 do
+				local w = (len + 40) * (1 - k * 0.2)
+				part({ Name = "IslandRoot", Size = Vector3.new(w, 10, 140 * (1 - k * 0.2)), Position = Vector3.new(c.X, top - 14 - k * 9, c.Z), Color = Color3.fromRGB(120, 100, 90):Lerp(zone.Floor, 0.3), Material = Enum.Material.Rock })
+			end
+		end
+		-- дорога
+		part({ Name = "ZoneRoad", Size = Vector3.new(len, 0.4, ROAD_WIDTH), Position = Vector3.new(c.X, top + 0.2, c.Z), Color = zone.Road })
 		for _, side in { -1, 1 } do
-			part({ Name = "ZoneRail", Size = Vector3.new(len, 0.4, 0.6), Position = Vector3.new(0, 3.5, zc + side * (ROAD_WIDTH / 2 + 0.5)), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false })
+			part({ Name = "ZoneRail", Size = Vector3.new(len, 0.4, 0.6), Position = Vector3.new(c.X, top + 0.5, c.Z + side * (ROAD_WIDTH / 2 + 0.5)), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false })
 		end
 		for x = -len / 2 + 10, len / 2 - 10, 14 do
-			part({ Name = "Arrow", Size = Vector3.new(4, 0.1, 1), CFrame = CFrame.new(x, 3.45, zc) * CFrame.Angles(0, math.rad(35), 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.4 })
-			part({ Name = "Arrow", Size = Vector3.new(4, 0.1, 1), CFrame = CFrame.new(x, 3.45, zc) * CFrame.Angles(0, math.rad(-35), 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.4 })
+			for _, a in { 35, -35 } do
+				part({ Name = "Arrow", Size = Vector3.new(4, 0.1, 1), CFrame = CFrame.new(c.X + x, top + 0.45, c.Z) * CFrame.Angles(0, math.rad(a), 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.4 })
+			end
 		end
-		local rng = Random.new(100 + zi)
-		for _ = 1, 36 do
-			local x = rng:NextNumber(-len / 2, len / 2)
-			local z = zc + (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(20, 55)
-			if isLava then
-				-- лавовые лужи и тёмные скалы
+		-- декор
+		for _ = 1, 30 do
+			local x = c.X + rng:NextNumber(-len / 2, len / 2)
+			local z = c.Z + (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(22, 60)
+			if zone.Id == "Lava" then
 				if rng:NextNumber() < 0.5 then
 					local r = rng:NextNumber(8, 16)
-					local pool = part({ Name = "Lava", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, r, r), CFrame = CFrame.new(x, 3.1, z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 90, 10), Material = Enum.Material.Neon, CanCollide = false })
+					local pool = part({ Name = "Lava", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, r, r), CFrame = CFrame.new(x, top + 0.1, z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 90, 10), Material = Enum.Material.Neon, CanCollide = false })
 					local l = Instance.new("PointLight")
 					l.Color = Color3.fromRGB(255, 110, 30)
 					l.Range = r * 1.5
@@ -461,30 +581,30 @@ function MapBuilder:_zones()
 					l.Parent = pool
 				else
 					local h = rng:NextNumber(6, 18)
-					part({ Name = "Rock", Size = Vector3.new(rng:NextNumber(4, 8), h, rng:NextNumber(4, 8)), CFrame = CFrame.new(x, 3 + h / 2, z) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 3), rng:NextNumber(-0.2, 0.2)), Color = Color3.fromRGB(45, 30, 30), Material = Enum.Material.Basalt })
+					part({ Name = "Rock", Size = Vector3.new(rng:NextNumber(4, 8), h, rng:NextNumber(4, 8)), CFrame = CFrame.new(x, top + h / 2, z) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 3), rng:NextNumber(-0.2, 0.2)), Color = Color3.fromRGB(45, 30, 30), Material = Enum.Material.Basalt })
 				end
-			else
-				-- светящиеся кристаллы
+			elseif zone.Id == "Crystal" then
 				local h = rng:NextNumber(8, 24)
-				local c = part({ Name = "Crystal", Size = Vector3.new(rng:NextNumber(2.5, 5), h, rng:NextNumber(2.5, 5)), CFrame = CFrame.new(x, 3 + h / 2 - 1, z) * CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 3), rng:NextNumber(-0.35, 0.35)), Color = if rng:NextNumber() < 0.5 then Color3.fromRGB(120, 220, 255) else Color3.fromRGB(190, 120, 255), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false })
-				if rng:NextNumber() < 0.3 then
-					local l = Instance.new("PointLight")
-					l.Color = c.Color
-					l.Range = 18
-					l.Parent = c
-				end
+				part({ Name = "Crystal", Size = Vector3.new(rng:NextNumber(2.5, 5), h, rng:NextNumber(2.5, 5)), CFrame = CFrame.new(x, top + h / 2 - 1, z) * CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 3), rng:NextNumber(-0.35, 0.35)), Color = if rng:NextNumber() < 0.5 then Color3.fromRGB(120, 220, 255) else Color3.fromRGB(190, 120, 255), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false })
+			elseif zone.Id == "Cloud" then
+				local sz = rng:NextNumber(6, 14)
+				part({ Name = "Fluff", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz, sz), Position = Vector3.new(x, top + sz * 0.2, z), Color = Color3.fromRGB(255, 255, 255):Lerp(zone.Accent, rng:NextNumber(0, 0.4)), CanCollide = false })
+			elseif zone.Id == "Cosmic" then
+				local h = rng:NextNumber(4, 14)
+				part({ Name = "Obelisk", Size = Vector3.new(2, h, 2), CFrame = CFrame.new(x, top + h / 2, z) * CFrame.Angles(0, rng:NextNumber(0, 3), 0), Color = if rng:NextNumber() < 0.5 then zone.Accent else Color3.fromRGB(90, 200, 255), Material = Enum.Material.Neon })
 			end
 		end
-		local start = Vector3.new(-len / 2 + 6, 3.4, zc)
-		self.Roads[zone.Id] = { Start = start, End = Vector3.new(len / 2 - 6, 3.4, zc), Zone = zone }
-		local title = part({ Name = "ZoneTitle", Size = Vector3.new(1, 1, 1), Position = start + Vector3.new(0, 24, 0), Transparency = 1, CanCollide = false })
-		label(title, zone.Name, UDim2.fromScale(34, 6), Vector3.zero, zone.Accent)
+		self:_landmark(zone, c, len, rng)
+
+		local start = Vector3.new(c.X - len / 2 + 6, top + 0.4, c.Z)
+		self.Roads[zone.Id] = { Start = start, End = Vector3.new(c.X + len / 2 - 6, top + 0.4, c.Z), Zone = zone }
+		bigSign(Vector3.new(c.X, top + 70, c.Z), zone.Name .. "\n🔒 Rebirth " .. zone.Rebirth .. "+", zone.Accent)
 		-- возврат на базу
 		local back = part({ Name = "ReturnPad", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 9, 9), CFrame = CFrame.new(start + Vector3.new(8, -0.1, 24)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 255, 160), Material = Enum.Material.Neon })
 		label(back, "🏠 BACK TO BASE", UDim2.fromScale(12, 3), Vector3.new(0, 5, 0), Color3.fromRGB(140, 255, 170))
 		-- портал в лобби у начала главной дороги
-		local side = if zi == 1 then -1 else 1
-		local padPos = Vector3.new(self.RoadStart.X + 14, 0.5, side * 26)
+		local padZ = ({ -26, 26, -54, 54 })[zi] or (zi * 20)
+		local padPos = Vector3.new(self.RoadStart.X + 14, 0.5, padZ)
 		local pad = part({ Name = "ZonePad", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 10, 10), CFrame = CFrame.new(padPos) * CFrame.Angles(0, 0, math.rad(90)), Color = zone.Accent, Material = Enum.Material.Neon })
 		for k = 0, 11 do
 			local a = k / 12 * math.pi * 2

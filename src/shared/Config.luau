@@ -205,10 +205,14 @@ Config.Achievements = {
 
 -- 🌍 Зоны с отдельными дорогами (открываются ребёртами)
 Config.Zones = {
-	{ Id = "Lava", Name = "🌋 LAVA LAND", Rebirth = 1, MinRarity = 2, Luck = 2, ZoneChance = 0.5, Z = -330,
-		Floor = Color3.fromRGB(60, 35, 35), Accent = Color3.fromRGB(255, 90, 20), Road = Color3.fromRGB(40, 20, 20) },
-	{ Id = "Crystal", Name = "💎 CRYSTAL CAVES", Rebirth = 3, MinRarity = 3, Luck = 3, ZoneChance = 0.5, Z = 330,
-		Floor = Color3.fromRGB(40, 45, 80), Accent = Color3.fromRGB(120, 220, 255), Road = Color3.fromRGB(25, 25, 60) },
+	{ Id = "Lava", Name = "🌋 LAVA LAND", Rebirth = 1, MinRarity = 2, Luck = 2, ZoneChance = 0.5, X = 0, Y = 0, Z = -360,
+		Floor = Color3.fromRGB(60, 35, 35), Accent = Color3.fromRGB(255, 90, 20), Road = Color3.fromRGB(40, 20, 20), Mat = Enum.Material.Basalt },
+	{ Id = "Crystal", Name = "💎 CRYSTAL CAVES", Rebirth = 3, MinRarity = 3, Luck = 3, ZoneChance = 0.5, X = 0, Y = 0, Z = 360,
+		Floor = Color3.fromRGB(40, 45, 80), Accent = Color3.fromRGB(120, 220, 255), Road = Color3.fromRGB(25, 25, 60), Mat = Enum.Material.Glacier },
+	{ Id = "Cloud", Name = "☁️ CLOUD KINGDOM", Rebirth = 5, MinRarity = 4, Luck = 4, ZoneChance = 0.55, X = -620, Y = 80, Z = 0,
+		Floor = Color3.fromRGB(245, 245, 255), Accent = Color3.fromRGB(255, 200, 240), Road = Color3.fromRGB(190, 200, 240), Mat = Enum.Material.SmoothPlastic },
+	{ Id = "Cosmic", Name = "🌌 COSMIC VOID", Rebirth = 8, MinRarity = 5, Luck = 5, ZoneChance = 0.6, X = 660, Y = 55, Z = 0,
+		Floor = Color3.fromRGB(20, 10, 40), Accent = Color3.fromRGB(170, 90, 255), Road = Color3.fromRGB(10, 5, 25), Mat = Enum.Material.Slate },
 }
 
 -- 🗼 Sky Obby: сундук на вершине

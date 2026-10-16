@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Pets = require(ReplicatedStorage.Shared.Pets)
 local Format = require(ReplicatedStorage.Shared.Format)
 
 local PlotService = {}
@@ -58,6 +59,37 @@ function PlotService:IsLocked(plot): boolean
 	return (plot.LockedUntil or 0) > os.clock()
 end
 
+-- Подсветка пьедестала по редкости стоящего на нём слайма
+function PlotService:_stylePed(plot, slot: string, entry)
+	local fx = plot.PedFx and plot.PedFx[tonumber(slot)]
+	if not fx then
+		return
+	end
+	local ped = plot.Pedestals[tonumber(slot)]
+	local accent = ped and ped:GetAttribute("Accent") or Color3.new(1, 1, 1)
+	if not entry then
+		fx.Ring.Color = accent
+		fx.Ring.Transparency = 0.3
+		fx.Rim.Transparency = 0.85
+		fx.Beam.Transparency = 1
+		fx.Light.Range = 0
+		return
+	end
+	local def = Pets.ById[entry.Id]
+	local r = def and Config.Rarities[def.Rarity]
+	local v = entry.V and Config.Variants[entry.V]
+	local col = if v then v.Color else (r and r.Color or accent)
+	local rarity = def and def.Rarity or 1
+	fx.Ring.Color = col
+	fx.Ring.Transparency = 0
+	fx.Rim.Color = col
+	fx.Rim.Transparency = 0.15
+	fx.Light.Color = col
+	fx.Light.Range = 6 + rarity * 1.5
+	fx.Beam.Color = col
+	fx.Beam.Transparency = if rarity >= 5 or entry.M then 0.82 - math.min(rarity - 5, 3) * 0.03 else 1
+end
+
 function PlotService:_clearSlot(plot, slot: string)
 	local m = models[plot] and models[plot][slot]
 	if m then
@@ -75,6 +107,7 @@ function PlotService:RenderSlot(player: Player, slot: string)
 	self:_clearSlot(plot, slot)
 	local entry = data.Pets[slot]
 	local ped = plot.Pedestals[tonumber(slot)]
+	self:_stylePed(plot, slot, entry)
 	if not entry or not ped then
 		return
 	end
@@ -210,6 +243,7 @@ function PlotService:RemovePet(player: Player, slot: string)
 	local plot = plotOf[player]
 	if plot then
 		self:_clearSlot(plot, slot)
+		self:_stylePed(plot, slot, nil)
 	end
 	self.S.EconomyService:Refresh(player)
 end
@@ -231,6 +265,11 @@ function PlotService:ClearAll(player: Player)
 	if plot and models[plot] then
 		for slot in models[plot] do
 			self:_clearSlot(plot, slot)
+		end
+	end
+	if plot then
+		for i = 1, #plot.Pedestals do
+			self:_stylePed(plot, tostring(i), nil)
 		end
 	end
 end
