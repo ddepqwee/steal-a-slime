@@ -174,6 +174,7 @@ Config.Codes = {
 
 -- 👑 King of the Hill и ✨ Golden Hunt
 Config.Hill = { Duration = 60, Radius = 14, IncomeSeconds = 2, Min = 25, SoloMult = 2 }
+Config.Runaway = { Duration = 70, BaseHits = 5, HitsPerPlayer = 2, Speed = 21, FleeRange = 16, MinRarity = 6, HitIncomeSeconds = 8, Min = 100 }
 Config.Hunt = { Count = 12, Duration = 90, IncomeSeconds = 15, Min = 200 }
 
 -- 🪤 Ловушка у входа базы: оглушает чужих игроков

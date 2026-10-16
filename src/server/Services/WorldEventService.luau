@@ -586,9 +586,127 @@ function WorldEventService:Hunt()
 	end
 end
 
+-- 🌈 RUNAWAY SLIME: радужный мифик убегает по полю — догоняй и бонькай битой!
+function WorldEventService:RunawayHit(player: Player, model: Model)
+	local st = self.runaway
+	if not st or st.model ~= model or st.done then
+		return
+	end
+	local now = os.clock()
+	if now - (st.lastHit[player] or 0) < 0.3 then
+		return
+	end
+	st.lastHit[player] = now
+	st.hits += 1
+	st.damage[player] = (st.damage[player] or 0) + 1
+	st.label.Text = ("🌈 RUNAWAY SLIME  %d / %d"):format(st.hits, st.need)
+	burst(model:GetPivot().Position, ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 255, 120)), ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 120, 255)) }), 14)
+	-- от удара отскакивает в сторону
+	st.target = fieldPoint()
+	if st.hits >= st.need then
+		st.done = true
+	end
+end
+
+function WorldEventService:Runaway()
+	local cfg = Config.Runaway
+	local entry = self.S.SpawnService:RollEntry(cfg.MinRarity, 1)
+	entry.V = "Rainbow"
+	local def = Pets.ById[entry.Id]
+	local model = self.S.PetFactory:Build(entry, { Scale = 2.2 })
+	local info = model.PrimaryPart:FindFirstChild("Info")
+	if info then
+		info:Destroy()
+	end
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide = false
+		end
+	end
+	model.PrimaryPart.Anchored = true
+	local pos = fieldPoint()
+	model:PivotTo(CFrame.new(pos + Vector3.new(0, 3, 0)))
+	model.Parent = folder
+	model:AddTag("Runaway")
+	local need = cfg.BaseHits + cfg.HitsPerPlayer * #Players:GetPlayers()
+	local label = billboard(model.PrimaryPart, ("🌈 RUNAWAY SLIME  0 / %d"):format(need), Color3.fromRGB(255, 255, 255), UDim2.fromOffset(260, 40), Vector3.new(0, 7, 0), true)
+	local st = { model = model, hits = 0, need = need, damage = {}, lastHit = {}, label = label, done = false, target = fieldPoint() }
+	self.runaway = st
+	self.S.SocialService:NotifyAll("🌈 A RAINBOW " .. def.Name .. " ESCAPED! Chase it and BONK it " .. need .. " times to catch it!", Color3.fromRGB(255, 120, 220), "Legendary")
+
+	local t0 = os.clock()
+	local last = os.clock()
+	while not st.done and os.clock() - t0 < cfg.Duration do
+		local now = os.clock()
+		local dt = now - last
+		last = now
+		-- убегает от ближайшего игрока
+		local nearest, nd = nil, cfg.FleeRange
+		for _, p in Players:GetPlayers() do
+			local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+			if r then
+				local d = (r.Position - pos) * Vector3.new(1, 0, 1)
+				if d.Magnitude < nd then
+					nearest, nd = d, d.Magnitude
+				end
+			end
+		end
+		local dir
+		if nearest then
+			dir = -nearest.Unit + Vector3.new(rng:NextNumber(-0.4, 0.4), 0, rng:NextNumber(-0.4, 0.4))
+		else
+			local to = (st.target - pos) * Vector3.new(1, 0, 1)
+			if to.Magnitude < 4 then
+				st.target = fieldPoint()
+			end
+			dir = to
+		end
+		if dir.Magnitude > 0.01 then
+			dir = dir.Unit
+		end
+		local speed = if nearest then cfg.Speed else cfg.Speed * 0.55
+		pos += dir * speed * dt
+		pos = Vector3.new(math.clamp(pos.X, -280, 280), 0, math.clamp(pos.Z, -205, 205))
+		local hop = math.abs(math.sin(now * 9)) * 2.2
+		model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 3 + hop, 0), pos + Vector3.new(0, 3 + hop, 0) + (if dir.Magnitude > 0.01 then dir else Vector3.zAxis)))
+		RunService.Heartbeat:Wait()
+	end
+
+	self.runaway = nil
+	local at = model:GetPivot().Position
+	model:Destroy()
+	if not st.done then
+		self.S.SocialService:NotifyAll("🌈 The Runaway Slime got away... next time!", Color3.fromRGB(200, 180, 255))
+		return
+	end
+	burst(at, ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 80, 200)), 50)
+	local best, bestN = nil, 0
+	for p, n in st.damage do
+		if p.Parent then
+			local cash = math.floor(math.max(cfg.Min, self.S.EconomyService:GetIncome(p) * cfg.HitIncomeSeconds * n))
+			self.S.EconomyService:AddCash(p, cash)
+			self.S.SocialService:Notify(p, ("🌈 %d bonks · +%s"):format(n, Format.money(cash)), Color3.fromRGB(255, 200, 240))
+			if n > bestN then
+				best, bestN = p, n
+			end
+		end
+	end
+	if best then
+		if self:_grant(best, entry) then
+			self.S.SocialService:NotifyAll("🌈 " .. best.DisplayName .. " caught the RAINBOW " .. def.Name .. "!", Color3.fromRGB(255, 120, 220), "Legendary")
+		else
+			local cash = math.floor(math.max(10_000, self.S.EconomyService:GetIncome(best) * 600))
+			self.S.EconomyService:AddCash(best, cash)
+			self.S.SocialService:NotifyAll("🌈 " .. best.DisplayName .. " caught the Runaway Slime (base full → " .. Format.money(cash) .. ")", Color3.fromRGB(255, 120, 220))
+		end
+	end
+end
+
 function WorldEventService:RunRandom()
 	local roll = rng:NextNumber()
-	if roll < 0.22 then
+	if roll < 0.12 then
+		self:Runaway()
+	elseif roll < 0.28 then
 		self:Meteor()
 	elseif roll < 0.42 then
 		self:Rain()

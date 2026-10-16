@@ -231,6 +231,7 @@ function PlotService:AddPet(player: Player, entry): string?
 	data.Pets[slot] = { Id = entry.Id, V = entry.V, L = entry.L, M = entry.M }
 	self.S.IndexService:Discover(player, entry.Id)
 	self.S.EconomyService:Refresh(player)
+	self.S.TradeService:Touch(player)
 	return slot
 end
 
@@ -246,6 +247,7 @@ function PlotService:RemovePet(player: Player, slot: string)
 		self:_stylePed(plot, slot, nil)
 	end
 	self.S.EconomyService:Refresh(player)
+	self.S.TradeService:Touch(player)
 end
 
 function PlotService:Sell(player: Player, slot: string)

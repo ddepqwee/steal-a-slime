@@ -1011,6 +1011,185 @@ function HUD.Build()
 	end
 
 	-- =========================================================
+	-- 🤝 TRADE
+	-- =========================================================
+	local TradeRemote = Net.event("Trade")
+	local tradePanel = makePanel("Trade", "🤝", "Trading", Color3.fromRGB(60, 190, 230))
+	local lobby = frame(tradePanel.Body, { Size = UDim2.fromScale(1, 1) })
+	label(lobby, "Pick a player to trade slimes with:", 20, { Size = UDim2.new(1, 0, 0, 30), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = C.Sub })
+	local lobbyList = scroll(lobby, UDim2.new(0.5, -5, 0, 84), { Position = UDim2.fromOffset(0, 38), Size = UDim2.new(1, 0, 1, -38) })
+	local thumbs = {}
+	local function rebuildLobby()
+		clear(lobbyList)
+		local any = false
+		for _, p in Players:GetPlayers() do
+			if p ~= player then
+				any = true
+				local c = card(lobbyList, { Height = 84, Color = Color3.fromRGB(60, 190, 230), Icon = "🙂", Title = p.DisplayName, Sub = "@" .. p.Name, RightWidth = 120 })
+				local uid = p.UserId
+				task.spawn(function()
+					if not thumbs[uid] then
+						local ok, img = pcall(Players.GetUserThumbnailAsync, Players, uid, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+						thumbs[uid] = if ok then img else ""
+					end
+					if thumbs[uid] ~= "" and c.Image.Parent then
+						c.Image.Image = thumbs[uid]
+						c.Icon.Visible = false
+					end
+				end)
+				btn(c.Frame, { Text = "🤝 Trade", Color = C.Green, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(110, 48), TextSize = 20, OnClick = function()
+					TradeRemote:FireServer("Request", uid)
+				end })
+			end
+		end
+		if not any then
+			label(lobbyList, "No other players here yet — invite a friend! 👥", 20, { Size = UDim2.new(1, 0, 0, 60), TextColor3 = C.Sub })
+		end
+	end
+	tradePanel.OnOpen = function()
+		if lobby.Visible then
+			rebuildLobby()
+		end
+	end
+
+	local sessionF = frame(tradePanel.Body, { Size = UDim2.fromScale(1, 1), Visible = false })
+	local cols = {}
+	local colTitles = { "📦 Your slimes (tap to add)", "📤 You give", "📥 They give" }
+	for i = 1, 3 do
+		local x = (i - 1) / 3
+		local col = frame(sessionF, { BackgroundTransparency = 0, BackgroundColor3 = C.Well, Position = UDim2.new(x, if i == 1 then 0 else 5, 0, 30), Size = UDim2.new(1 / 3, -7, 1, -104) })
+		corner(col, 14)
+		stroke(col, C.Ink, 2)
+		local title = label(sessionF, colTitles[i], 17, { Position = UDim2.new(x, if i == 1 then 0 else 5, 0, 0), Size = UDim2.new(1 / 3, -7, 0, 28), TextWrapped = false })
+		fit(title, 17, 8)
+		cols[i] = { list = scroll(col), title = title }
+	end
+	local myReadyBtn = btn(sessionF, { Text = "✅ READY", Color = C.Green, AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(0.42, 0, 0, 62), TextSize = 26, OnClick = function()
+		TradeRemote:FireServer("Ready")
+	end })
+	local partnerChip, partnerT, setPartnerColor = chip(sessionF, "", C.Gray, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.62, 0, 1, -14), Size = UDim2.fromOffset(0, 36) })
+	local _ = partnerChip
+	btn(sessionF, { Text = "Cancel", Color = C.Red, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 0, 1, 0), Size = UDim2.new(0.2, 0, 0, 62), TextSize = 24, OnClick = function()
+		TradeRemote:FireServer("Cancel")
+	end })
+
+	local function slimeRow(parent, item, order, onClick)
+		local def = Pets.ById[item.Id]
+		if not def then
+			return
+		end
+		local r = Config.Rarities[def.Rarity]
+		local v = item.V and Config.Variants[item.V]
+		local row = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = WHITE, Size = UDim2.new(1, 0, 0, 62), LayoutOrder = order }, parent)
+		corner(row, 12)
+		stroke(row, r.Color, 2)
+		grad(row, C.CardHi, C.Card)
+		slimeIcon(row, if v then v.Color else def.Color, 44, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 6, 0.5, 0) })
+		local nm = label(row, (if v then v.Label .. " " else "") .. (if item.M then "MEGA " else "") .. def.Name, 16, { Position = UDim2.fromOffset(56, 6), Size = UDim2.new(1, -60, 0, 24), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = false, TextColor3 = lighten(r.Color, 0.3) })
+		fit(nm, 16, 7)
+		local inc = label(row, r.Name .. " · " .. Format.money(item.Income or 0) .. "/s", 13, { Position = UDim2.fromOffset(56, 32), Size = UDim2.new(1, -60, 0, 20), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = false, TextColor3 = C.Lime })
+		fit(inc, 13, 7)
+		if onClick then
+			row.Activated:Connect(onClick)
+		end
+	end
+
+	local function showSession(v)
+		lobby.Visible = false
+		sessionF.Visible = true
+		tradePanel.Sub.Text = "with " .. v.Partner
+		cols[2].title.Text = ("📤 You give (%d/%d)"):format(#v.MyOffer, v.Max)
+		cols[3].title.Text = "📥 " .. v.Partner .. " gives"
+		for i = 1, 3 do
+			clear(cols[i].list)
+		end
+		for k, item in v.Mine do
+			slimeRow(cols[1].list, item, k, function()
+				TradeRemote:FireServer("Add", item.Slot)
+			end)
+		end
+		local giveSum, getSum = 0, 0
+		for k, item in v.MyOffer do
+			giveSum += item.Income or 0
+			slimeRow(cols[2].list, item, k, function()
+				TradeRemote:FireServer("Remove", item.Slot)
+			end)
+		end
+		for k, item in v.TheirOffer do
+			getSum += item.Income or 0
+			slimeRow(cols[3].list, item, k, nil)
+		end
+		if #v.Mine == 0 then
+			label(cols[1].list, "No slimes to offer", 16, { Size = UDim2.new(1, 0, 0, 40), TextColor3 = C.Sub })
+		end
+		myReadyBtn.SetText(if v.MyReady then "⏳ Waiting..." else "✅ READY")
+		myReadyBtn.SetColor(if v.MyReady then C.Gray else C.Green)
+		partnerT.Text = (if v.TheirReady then "✅ " else "⏳ ") .. v.Partner .. (if v.TheirReady then " is ready" else " not ready") .. ("  ·  %s/s ↔ %s/s"):format(Format.money(giveSum), Format.money(getSum))
+		setPartnerColor(if v.TheirReady then C.Green else C.Gray)
+		if not tradePanel.Frame.Visible then
+			openPanel(tradePanel)
+		end
+	end
+	local function showLobby()
+		sessionF.Visible = false
+		lobby.Visible = true
+		tradePanel.Sub.Text = "Swap slimes safely"
+		rebuildLobby()
+	end
+	showLobby()
+
+	-- всплывашка-приглашение
+	local invite = frame(root, { BackgroundTransparency = 0, BackgroundColor3 = WHITE, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 130), Size = UDim2.fromOffset(470, 120), Visible = false, ZIndex = 20 })
+	corner(invite, 18)
+	stroke(invite, C.Ink, 4)
+	grad(invite, Color3.fromRGB(70, 170, 230), Color3.fromRGB(40, 110, 180))
+	local inviteT = label(invite, "", 22, { Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 44), ZIndex = 21 })
+	fit(inviteT, 22, 10)
+	local inviteToken = 0
+	btn(invite, { Text = "Accept", Color = C.Green, Position = UDim2.new(0, 14, 1, -62), Size = UDim2.new(0.5, -20, 0, 52), TextSize = 24, OnClick = function()
+		invite.Visible = false
+		TradeRemote:FireServer("Accept")
+	end })
+	btn(invite, { Text = "Decline", Color = C.Red, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 1, -62), Size = UDim2.new(0.5, -20, 0, 52), TextSize = 24, OnClick = function()
+		invite.Visible = false
+		TradeRemote:FireServer("Decline")
+	end })
+
+	TradeRemote.OnClientEvent:Connect(function(kind, a, _b)
+		if kind == "Invite" then
+			inviteToken += 1
+			local my = inviteToken
+			inviteT.Text = "🤝 " .. tostring(a) .. " wants to trade with you!"
+			invite.Visible = true
+			task.delay(20, function()
+				if inviteToken == my then
+					invite.Visible = false
+				end
+			end)
+		elseif kind == "State" then
+			invite.Visible = false
+			showSession(a)
+		elseif kind == "Closed" then
+			showLobby()
+			if a and a ~= "" then
+				toast(a, Color3.fromRGB(140, 220, 255))
+			end
+		end
+	end)
+	Players.PlayerAdded:Connect(function()
+		if lobby.Visible and tradePanel.Frame.Visible then
+			rebuildLobby()
+		end
+	end)
+	Players.PlayerRemoving:Connect(function()
+		task.defer(function()
+			if lobby.Visible and tradePanel.Frame.Visible then
+				rebuildLobby()
+			end
+		end)
+	end)
+
+	-- =========================================================
 	-- 🥚 Хэтч-оверлей
 	-- =========================================================
 	local hatchFrame = frame(root, { BackgroundTransparency = 0.35, BackgroundColor3 = Color3.fromRGB(10, 5, 25), Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 50 })
@@ -1269,7 +1448,7 @@ function HUD.Build()
 	-- =========================================================
 	-- Кнопки слева
 	-- =========================================================
-	local side = frame(root, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.52, 0), Size = UDim2.fromOffset(3 * 78 + 2 * 8, 4 * 86 + 3 * 8) })
+	local side = frame(root, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.52, 0), Size = UDim2.fromOffset(3 * 78 + 2 * 8, 5 * 86 + 4 * 8) })
 	HUD.Side = side
 	new("UIGridLayout", { CellSize = UDim2.fromOffset(78, 86), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, side)
 	local order = 0
@@ -1351,6 +1530,9 @@ function HUD.Build()
 			options.PromptMessage = "Come steal slimes with me! +10% cash per friend"
 			SocialService:PromptGameInvite(player, options)
 		end)
+	end)
+	sb.Trade = sideButton("🤝", "Trade", Color3.fromRGB(60, 190, 230), function()
+		togglePanel(tradePanel)
 	end)
 	HUD._sideButtons = sb
 
