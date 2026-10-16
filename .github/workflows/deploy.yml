@@ -1,0 +1,39 @@
+name: Build & Publish to Roblox
+
+# Каждый push в main: собирает игру из кода и публикует её в Roblox.
+# Нужные секреты в GitHub (Settings → Secrets and variables → Actions):
+#   ROBLOX_API_KEY   — ключ Open Cloud с правом universe-places:write
+# UNIVERSE_ID и PLACE_ID ниже — не секретные, они видны в ссылке на игру.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rojo
+        run: |
+          curl -sSL -o rojo.zip https://github.com/rojo-rbx/rojo/releases/download/v7.4.4/rojo-7.4.4-linux-x86_64.zip
+          unzip -q rojo.zip -d bin && chmod +x bin/rojo
+
+      - name: Build place
+        run: ./bin/rojo build default.project.json -o game.rbxl
+
+      - name: Publish via Open Cloud
+        env:
+          API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+          UNIVERSE_ID: "10771225083"
+          PLACE_ID: "72560314175089"
+        run: |
+          status=$(curl -sS -o resp.json -w "%{http_code}" -X POST \
+            "https://apis.roblox.com/universes/v1/${UNIVERSE_ID}/places/${PLACE_ID}/versions?versionType=Published" \
+            -H "x-api-key: ${API_KEY}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @game.rbxl)
+          cat resp.json
+          test "$status" = "200"
