@@ -110,7 +110,7 @@ local TITLES = {
 	{ Text = "🦝 SNEAKY", Color = Color3.fromRGB(255, 190, 120), Check = function(d)
 		return (d.Steals or 0) >= 10
 	end },
-	{ Text = "🫧 NEWBIE", Color = Color3.fromRGB(220, 220, 230), Check = function()
+	{ Text = "💧 NEWBIE", Color = Color3.fromRGB(220, 220, 230), Check = function()
 		return true
 	end },
 }

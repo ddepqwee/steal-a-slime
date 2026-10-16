@@ -96,7 +96,7 @@ function SocialService:Start()
 			end
 		end
 		self:RecalcFriends()
-		self:Notify(player, "Welcome to " .. Config.GameName .. " 🫧 Buy slimes on the road!", Color3.fromRGB(255, 170, 240))
+		self:Notify(player, "Welcome to " .. Config.GameName .. " 💧 Buy slimes on the road!", Color3.fromRGB(255, 170, 240))
 	end)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(function()

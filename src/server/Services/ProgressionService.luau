@@ -89,7 +89,7 @@ function ProgressionService:BuySlot(player: Player)
 	end
 	data.ExtraSlots = (data.ExtraSlots or 0) + 1
 	self.S.PlotService:RefreshSlots(player)
-	self.S.SocialService:Notify(player, "🫧 +1 slime slot! (" .. self.S.PlotService:MaxSlots(player) .. " total)", Color3.fromRGB(140, 255, 200), "Buy")
+	self.S.SocialService:Notify(player, "💧 +1 slime slot! (" .. self.S.PlotService:MaxSlots(player) .. " total)", Color3.fromRGB(140, 255, 200), "Buy")
 end
 
 function ProgressionService:MutateCost(entry): number

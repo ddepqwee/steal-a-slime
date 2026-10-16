@@ -157,7 +157,7 @@ Config.QuestRewardMin = 1_000
 -- 🥚 Яйца: вылупляется случайный слайм из диапазона редкостей (веса как на дороге)
 Config.Eggs = {
 	{ Id = "Meadow", Name = "Meadow Egg", Icon = "🥚", Price = 1_000, MinRarity = 1, MaxRarity = 3, Color = Color3.fromRGB(150, 230, 130) },
-	{ Id = "Bubble", Name = "Bubble Egg", Icon = "🫧", Price = 100_000, MinRarity = 2, MaxRarity = 5, Color = Color3.fromRGB(110, 190, 255) },
+	{ Id = "Bubble", Name = "Bubble Egg", Icon = "💧", Price = 100_000, MinRarity = 2, MaxRarity = 5, Color = Color3.fromRGB(110, 190, 255) },
 	{ Id = "Royal", Name = "Royal Egg", Icon = "👑", Price = 10_000_000, MinRarity = 3, MaxRarity = 6, Color = Color3.fromRGB(255, 200, 60) },
 	{ Id = "Cosmic", Name = "Cosmic Egg", Icon = "🌌", Price = 1_000_000_000, MinRarity = 4, MaxRarity = 8, Color = Color3.fromRGB(150, 90, 255) },
 }

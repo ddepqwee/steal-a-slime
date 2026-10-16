@@ -12,7 +12,7 @@ local player = Players.LocalPlayer
 local Tutorial = {}
 
 local TEXTS = {
-	"🫧 Walk to the road and press E on a slime to BUY it!",
+	"💧 Walk to the road and press E on a slime to BUY it!",
 	"⬆️ Go back to your base and press E on your slime to UPGRADE it!",
 	"🦹 Sneak into another base, hold E on a slime and RUN HOME with it!",
 	"🔒 Thieves are coming! Step on the red LOCK button (or press 🔒 Lock)",

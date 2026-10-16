@@ -422,7 +422,7 @@ local function makePanel(name: string, icon: string, title: string, accent: Colo
 	local body = frame(f, { Position = UDim2.fromOffset(18, 86), Size = UDim2.new(1, -36, 1, -102) })
 	local p = { Frame = f, Body = body, Sub = sub, Accent = accent }
 	btn(f, {
-		Text = "✕",
+		Text = "X",
 		Color = C.Red,
 		Size = UDim2.fromOffset(56, 56),
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -507,7 +507,7 @@ end
 local SHOP_ICONS = {
 	DoubleCash = "💸",
 	VIP = "👑",
-	ExtraSlots = "🫧",
+	ExtraSlots = "💧",
 	LongLock = "🔒",
 	CashSmall = "💵",
 	CashBig = "🏦",
@@ -561,8 +561,8 @@ function HUD.Build()
 	local infoRow = frame(root, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 86), Size = UDim2.fromOffset(900, 30) })
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, infoRow)
 	HUD.SlotsPill = infoRow
-	local _, slotsT = chip(infoRow, "🫧 0/0", Color3.fromRGB(80, 70, 150), { LayoutOrder = 1 })
-	local _, timeT, setTimeColor = chip(infoRow, "☀️", Color3.fromRGB(255, 190, 60), { LayoutOrder = 0 })
+	local _, slotsT = chip(infoRow, "💧 0/0", Color3.fromRGB(80, 70, 150), { LayoutOrder = 1 })
+	local _, timeT, setTimeColor = chip(infoRow, "🌞", Color3.fromRGB(255, 190, 60), { LayoutOrder = 0 })
 	local potionChip, potionT = chip(infoRow, "", Color3.fromRGB(60, 170, 220), { LayoutOrder = 2, Visible = false })
 	local eventChip, eventT = chip(infoRow, "", C.Orange, { LayoutOrder = 3, Visible = false })
 
@@ -774,7 +774,7 @@ function HUD.Build()
 		local b = btn(c.Frame, { Text = "...", Color = C.Green, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(156, 54), TextSize = 22, OnClick = onClick })
 		return c, b
 	end
-	local slotCard, slotBtn = upgradeRow(1, "🫧", C.Green, function()
+	local slotCard, slotBtn = upgradeRow(1, "💧", C.Green, function()
 		Action:FireServer("BuySlot")
 	end)
 	local lockCard, lockBtn = upgradeRow(2, "🔒", C.Red, function()
@@ -1258,7 +1258,7 @@ function HUD.Build()
 			TweenService:Create(cashScale, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 		end
 		lastCash = s.Cash
-		slotsT.Text = ("🫧 %d/%d slimes"):format(s.UsedSlots, s.Slots)
+		slotsT.Text = ("💧 %d/%d slimes"):format(s.UsedSlots, s.Slots)
 
 		-- Base
 		slotCard.Title.Text = "+1 Slime Slot"
@@ -1351,7 +1351,7 @@ function HUD.Build()
 		while true do
 			local isNight = ReplicatedStorage:GetAttribute("Night") == true
 			local left = Format.time((ReplicatedStorage:GetAttribute("PhaseEnds") or os.time()) - os.time())
-			timeT.Text = if isNight then "🌙 Moon slimes! " .. left else "☀️ Night in " .. left
+			timeT.Text = if isNight then "🌙 Moon slimes! " .. left else "🌞 Night in " .. left
 			setTimeColor(if isNight then Color3.fromRGB(110, 100, 230) else Color3.fromRGB(255, 180, 50))
 			local t = ReplicatedStorage:GetAttribute("EventText") or ""
 			local ends = ReplicatedStorage:GetAttribute("EventEnds") or 0

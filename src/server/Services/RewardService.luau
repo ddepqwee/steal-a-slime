@@ -40,7 +40,7 @@ function RewardService:_grant(player: Player, prize): string
 		local entry = self.S.SpawnService:RollEntry(prize.MinRarity, 1.5)
 		local def = Pets.ById[entry.Id]
 		if self.S.WorldEventService:_grant(player, entry) then
-			return "🫧 " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. "!"
+			return "💧 " .. Config.Rarities[def.Rarity].Name .. " " .. def.Name .. "!"
 		end
 		-- нет места — компенсируем деньгами
 		return "+" .. Format.money(self:_cash(player, 10)) .. " (base full)"

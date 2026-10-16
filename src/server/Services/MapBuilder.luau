@@ -203,7 +203,7 @@ function MapBuilder:_ground()
 		light.Parent = field
 	end
 	local titleAnchor = part({ Name = "TitleAnchor", Size = Vector3.new(1, 1, 1), Position = Vector3.new(self.RoadStart.X - 2, 31, 0), Transparency = 1, CanCollide = false })
-	label(titleAnchor, "🫧 STEAL A SLIME 🫧", UDim2.fromScale(36, 7), Vector3.zero, Color3.fromRGB(255, 160, 240))
+	label(titleAnchor, "💧 STEAL A SLIME 💧", UDim2.fromScale(36, 7), Vector3.zero, Color3.fromRGB(255, 160, 240))
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
