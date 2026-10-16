@@ -42,6 +42,7 @@ local function template()
 		Stats = {},
 		Ach = {},
 		Codes = {},
+		Tutorial = 1,
 		Buddy = true,
 		CashPotionUntil = 0,
 		Quests = nil,

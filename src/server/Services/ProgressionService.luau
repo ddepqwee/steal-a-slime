@@ -259,6 +259,7 @@ function ProgressionService:UpgradePet(player: Player, slot: string)
 	self.S.PlotService:RenderSlot(player, slot)
 	self.S.QuestService:Add(player, "Upgrade", 1)
 	self.S.DataService:Stat(player, "Upgrades")
+	self.S.TutorialService:Advance(player, "Upgrade")
 	self.S.SocialService:Notify(player, "⬆️ Upgraded to Lv." .. entry.L .. "! Income x" .. Config.Upgrade.IncomeMult, Color3.fromRGB(140, 255, 160), "Buy")
 end
 
@@ -305,6 +306,8 @@ function ProgressionService:Start()
 			self.S.SocialService:ClaimDaily(player)
 		elseif action == "Lock" then
 			self.S.PlotService:Lock(player)
+		elseif action == "TutSkip" then
+			self.S.TutorialService:Skip(player)
 		elseif action == "Hatch" then
 			self.S.RewardService:Hatch(player, arg)
 		elseif action == "Redeem" then

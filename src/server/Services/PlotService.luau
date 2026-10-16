@@ -291,6 +291,7 @@ function PlotService:Lock(player: Player)
 	plot.LockedUntil = os.clock() + duration
 	plot.LockReadyAt = plot.LockedUntil + Config.LockCooldown
 	self:_setWalls(plot, true)
+	self.S.TutorialService:Advance(player, "Lock")
 	-- Выталкиваем чужих игроков из закрытой базы к входу
 	for _, other in Players:GetPlayers() do
 		local root = other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart")

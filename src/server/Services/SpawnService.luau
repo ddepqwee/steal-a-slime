@@ -194,6 +194,7 @@ function SpawnService:TryBuy(player: Player, item)
 	end
 	self.S.SocialService:PlaySound(player, "Buy")
 	self.S.QuestService:Add(player, "Buy", 1)
+	self.S.TutorialService:Advance(player, "Buy")
 
 	-- Прыжок слайма на базу (косметика); данные уже сохранены
 	local model = item.model
