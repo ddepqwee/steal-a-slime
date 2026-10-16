@@ -97,7 +97,7 @@ end
 -- Случайная точка в открытом поле (вне баз и дороги)
 local function fieldPoint(): Vector3
 	local side = if rng:NextNumber() < 0.5 then -1 else 1
-	return Vector3.new(rng:NextNumber(-150, 150), 0, side * rng:NextNumber(92, 135))
+	return Vector3.new(rng:NextNumber(-170, 170), 0, side * rng:NextNumber(112, 160))
 end
 
 -- ☄️ METEOR: через 10 сек в поле падает редкий слайм, первый зажавший E забирает
@@ -173,7 +173,7 @@ function WorldEventService:Rain()
 			local entry = self.S.SpawnService:RollEntry(nil, cfg.LuckMult)
 			local def = Pets.ById[entry.Id]
 			local model = self.S.PetFactory:Build(entry, { Scale = 1.2 })
-			local ground = Vector3.new(rng:NextNumber(-150, 150), 0.5, rng:NextNumber(-16, 16))
+			local ground = Vector3.new(rng:NextNumber(-190, 190), 0.5, rng:NextNumber(-30, 30))
 			local h = model.PrimaryPart.Size.Y * 0.6
 			model:PivotTo(CFrame.new(ground + Vector3.new(0, 80, 0)))
 			model.Parent = folder
@@ -258,7 +258,7 @@ function WorldEventService:Raid()
 	local names = { "Bandit Bob", "Sneaky Sam", "Greedy Gus", "Robber Rex", "Shady Shay", "Loot Larry" }
 	local bandits = {}
 	for i = 1, cfg.Count do
-		local at = CFrame.new(Vector3.new(rng:NextNumber(-140, 140), 4, rng:NextNumber(-10, 10)))
+		local at = CFrame.new(Vector3.new(rng:NextNumber(-180, 180), 4, rng:NextNumber(-20, 20)))
 		local npc = self.S.DirectorService:_makeThief(names[((i - 1) % #names) + 1], at)
 		local hum = npc:FindFirstChildOfClass("Humanoid")
 		hum.WalkSpeed = cfg.Speed
@@ -306,11 +306,11 @@ function WorldEventService:Raid()
 					-- лёгкий зигзаг, чтобы погоня была интереснее
 					away = (CFrame.Angles(0, rng:NextNumber(-0.6, 0.6), 0) * CFrame.new(away)).Position
 					local target = root.Position + away * 22
-					target = Vector3.new(math.clamp(target.X, -165, 165), 0, math.clamp(target.Z, -140, 140))
+					target = Vector3.new(math.clamp(target.X, -205, 205), 0, math.clamp(target.Z, -160, 160))
 					hum:MoveTo(target)
 					nextWander = os.clock() + 1.5
 				elseif os.clock() > nextWander then
-					hum:MoveTo(Vector3.new(rng:NextNumber(-150, 150), 0, rng:NextNumber(-18, 18)))
+					hum:MoveTo(Vector3.new(rng:NextNumber(-190, 190), 0, rng:NextNumber(-30, 30)))
 					nextWander = os.clock() + rng:NextNumber(2, 4)
 				end
 				task.wait(0.3)
@@ -413,7 +413,7 @@ function WorldEventService:Boss()
 	while not self.boss.dead and os.clock() - start < cfg.Duration do
 		local dt = task.wait(0.1)
 		pos += Vector3.new(dir * 4 * dt, 0, 0)
-		if math.abs(pos.X) > 140 then
+		if math.abs(pos.X) > 180 then
 			dir = -dir
 		end
 		local bob = math.abs(math.sin(os.clock() * 2)) * 2

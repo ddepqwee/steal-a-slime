@@ -149,6 +149,17 @@ Config.Quests = {
 Config.QuestRewardMinutes = 8 -- награда = доход за N минут
 Config.QuestRewardMin = 1_000
 
+-- 🌍 Зоны с отдельными дорогами (открываются ребёртами)
+Config.Zones = {
+	{ Id = "Lava", Name = "🌋 LAVA LAND", Rebirth = 1, MinRarity = 2, Luck = 2, ZoneChance = 0.5, Z = -330,
+		Floor = Color3.fromRGB(60, 35, 35), Accent = Color3.fromRGB(255, 90, 20), Road = Color3.fromRGB(40, 20, 20) },
+	{ Id = "Crystal", Name = "💎 CRYSTAL CAVES", Rebirth = 3, MinRarity = 3, Luck = 3, ZoneChance = 0.5, Z = 330,
+		Floor = Color3.fromRGB(40, 45, 80), Accent = Color3.fromRGB(120, 220, 255), Road = Color3.fromRGB(25, 25, 60) },
+}
+
+-- 🗼 Sky Obby: сундук на вершине
+Config.Obby = { Stages = 26, Cooldown = 15 * 60, RewardMinutes = 10, RewardMin = 2_500, SlimeChance = 0.15 }
+
 -- Подарки за время в сессии (минуты). Последний — слайм Epic+.
 Config.PlayGifts = {
 	{ Min = 2, Kind = "Cash", Minutes = 2 },

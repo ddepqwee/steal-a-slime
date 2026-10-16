@@ -36,6 +36,17 @@ Pets.List = {
 	{ Id = "NebulaNugget", Name = "Nebula Nugget", Rarity = 8, Price = 15_000_000_000, Income = 25_000_000, Color = Color3.fromRGB(150, 90, 255), Size = 6.2, Neon = true, Sparkle = true },
 	{ Id = "SolarSovereign", Name = "Solar Sovereign", Rarity = 8, Price = 50_000_000_000, Income = 75_000_000, Color = Color3.fromRGB(255, 160, 40), Size = 6.6, Neon = true, Sparkle = true, Crown = true },
 
+	-- 🌋 Lava Land (Zone = "Lava")
+	{ Id = "MagmaMite", Name = "Magma Mite", Rarity = 3, Price = 30_000, Income = 380, Color = Color3.fromRGB(255, 100, 30), Size = 3.4, Zone = "Lava", Neon = true },
+	{ Id = "EmberOoze", Name = "Ember Ooze", Rarity = 4, Price = 450_000, Income = 3_400, Color = Color3.fromRGB(255, 60, 40), Size = 3.9, Zone = "Lava", Neon = true, Sparkle = true },
+	{ Id = "VolcanoVex", Name = "Volcano Vex", Rarity = 5, Price = 9_000_000, Income = 42_000, Color = Color3.fromRGB(90, 30, 20), Size = 4.6, Zone = "Lava", Pumpkin = false, Crown = true, Sparkle = true },
+	{ Id = "InfernoImp", Name = "Inferno Imp", Rarity = 6, Price = 90_000_000, Income = 280_000, Color = Color3.fromRGB(255, 40, 0), Size = 5.1, Zone = "Lava", Neon = true, Sparkle = true, Glitch = true },
+	-- 💎 Crystal Caves (Zone = "Crystal")
+	{ Id = "QuartzQuiver", Name = "Quartz Quiver", Rarity = 4, Price = 800_000, Income = 6_000, Color = Color3.fromRGB(230, 230, 255), Size = 4.0, Zone = "Crystal", Glass = true, Sparkle = true },
+	{ Id = "AmethystAce", Name = "Amethyst Ace", Rarity = 5, Price = 18_000_000, Income = 80_000, Color = Color3.fromRGB(170, 90, 255), Size = 4.7, Zone = "Crystal", Glass = true, Sparkle = true },
+	{ Id = "PrismPrince", Name = "Prism Prince", Rarity = 6, Price = 180_000_000, Income = 520_000, Color = Color3.fromRGB(120, 255, 240), Size = 5.3, Zone = "Crystal", Neon = true, Sparkle = true, Crown = true },
+	{ Id = "CrystalColossus", Name = "Crystal Colossus", Rarity = 7, Price = 2_000_000_000, Income = 4_500_000, Color = Color3.fromRGB(150, 200, 255), Size = 6.2, Zone = "Crystal", Glass = true, Sparkle = true, Crown = true },
+
 	-- 🎃 Halloween (Event = "Halloween": выпадают только во время ивента)
 	{ Id = "CandyCorn", Name = "Candy Corn", Rarity = 3, Price = 15_000, Income = 200, Color = Color3.fromRGB(255, 190, 60), Size = 3.3, Event = "Halloween", Stripes = true },
 	{ Id = "GhostlyGoo", Name = "Ghostly Goo", Rarity = 4, Price = 200_000, Income = 1_600, Color = Color3.fromRGB(235, 240, 255), Size = 3.9, Event = "Halloween", Ghost = true },
@@ -53,14 +64,21 @@ for _, p in Pets.List do
 end
 
 -- Пул слаймов редкости: обычные + (если ивент идёт) ивентовые с отдельным шансом
-function Pets.Pool(rarity: number, activeEvent: string?, eventChance: number, roll: number)
-	local normal, event = {}, {}
+function Pets.Pool(rarity: number, activeEvent: string?, eventChance: number, roll: number, zone: string?, zoneChance: number?, zoneRoll: number?)
+	local normal, event, zonal = {}, {}, {}
 	for _, p in Pets.ByRarity[rarity] or {} do
-		if p.Event == nil then
+		if p.Zone ~= nil then
+			if p.Zone == zone then
+				table.insert(zonal, p)
+			end
+		elseif p.Event == nil then
 			table.insert(normal, p)
 		elseif p.Event == activeEvent then
 			table.insert(event, p)
 		end
+	end
+	if #zonal > 0 and ((zoneRoll or 1) < (zoneChance or 0) or (#normal == 0 and #event == 0)) then
+		return zonal
 	end
 	if #event > 0 and (roll < eventChance or #normal == 0) then
 		return event

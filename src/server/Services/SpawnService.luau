@@ -72,32 +72,36 @@ function SpawnService:RollVariant(luck: number, seasonName: string?): string?
 	return nil
 end
 
-function SpawnService:RollEntry(minRarity: number?, luckMult: number?)
+function SpawnService:RollEntry(minRarity: number?, luckMult: number?, zone: any?)
 	local luck = self.S.EventService:GetLuck() * (luckMult or 1)
+	local zoneId = zone and zone.Id or nil
+	local zoneChance = zone and zone.ZoneChance or 0
 	local rarity = self:RollRarity(luck, minRarity)
 	local season = self.S.EventService:Season()
 	local seasonName = season and season.Name or nil
 	local eventChance = if season then math.min(0.9, season.EventPetChance * self.S.EventService:SeasonMult()) else 0
-	local pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
+	local pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber(), zoneId, zoneChance, rng:NextNumber())
 	while #pool == 0 and rarity > 1 do
 		rarity -= 1
-		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber())
+		pool = Pets.Pool(rarity, seasonName, eventChance, rng:NextNumber(), zoneId, zoneChance, rng:NextNumber())
 	end
 	local def = pool[rng:NextInteger(1, #pool)]
 	local variant = self:RollVariant(luck, seasonName)
 	return { Id = def.Id, V = variant }, def
 end
 
-function SpawnService:Spawn(minRarity: number?, forced: any?)
+function SpawnService:Spawn(minRarity: number?, forced: any?, road: any?)
+	road = road or self.S.MapBuilder.Roads.Main
 	local entry, def
 	if forced then
 		entry, def = forced, Pets.ById[forced.Id]
 	else
-		entry, def = self:RollEntry(minRarity)
+		local zone = road.Zone
+		entry, def = self:RollEntry(zone and math.max(minRarity or 1, zone.MinRarity) or minRarity, zone and zone.Luck or nil, zone)
 	end
 	local price = self.S.EconomyService:PetValue(entry)
 	local model = self.S.PetFactory:Build(entry, { Price = price, Scale = 1.6 })
-	local item = { model = model, pos = 0, sold = false, entry = entry, price = price, phase = rng:NextNumber(0, 6) }
+	local item = { model = model, pos = 0, sold = false, entry = entry, price = price, phase = rng:NextNumber(0, 6), road = road }
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "BuyPrompt"
@@ -183,10 +187,10 @@ function SpawnService:TryBuy(player: Player, item)
 end
 
 function SpawnService:Start()
-	local roadStart = self.S.MapBuilder.RoadStart
-	local roadEnd = self.S.MapBuilder.RoadEnd
-	local length = (roadEnd - roadStart).Magnitude
-	local dir = (roadEnd - roadStart).Unit
+	for _, road in self.S.MapBuilder.Roads do
+		road.Length = (road.End - road.Start).Magnitude
+		road.Dir = (road.End - road.Start).Unit
+	end
 
 	RunService.Heartbeat:Connect(function(dt)
 		local now = os.clock()
@@ -195,19 +199,43 @@ function SpawnService:Start()
 			if item.sold then
 				table.remove(active, i)
 			else
+				local road = item.road
 				item.pos += Config.ConveyorSpeed * dt
-				if item.pos >= length then
+				if item.pos >= road.Length then
 					item.model:Destroy()
 					table.remove(active, i)
 				else
 					local hop = math.abs(math.sin(now * 4 + item.phase)) * 1.2
-					local base = roadStart + dir * item.pos
+					local base = road.Start + road.Dir * item.pos
 					local h = item.model.PrimaryPart.Size.Y * 0.6
 					item.model:PivotTo(CFrame.new(base + Vector3.new(0, h + hop, 0)) * CFrame.Angles(0, now * 1.3 + item.phase, 0))
 				end
 			end
 		end
 	end)
+
+	-- дороги зон работают, только когда в зоне кто-то есть
+	for _, road in self.S.MapBuilder.Roads do
+		if road.Zone then
+			task.spawn(function()
+				while true do
+					task.wait(Config.SpawnInterval)
+					local anyone = false
+					for _, p in Players:GetPlayers() do
+						if p:GetAttribute("Zone") == road.Zone.Id then
+							anyone = true
+						end
+					end
+					if anyone then
+						local ok, err = pcall(self.Spawn, self, nil, nil, road)
+						if not ok then
+							warn("[Spawn zone]", err)
+						end
+					end
+				end
+			end)
+		end
+	end
 
 	while true do
 		if #Players:GetPlayers() > 0 then

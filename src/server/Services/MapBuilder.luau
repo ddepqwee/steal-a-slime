@@ -11,7 +11,7 @@ local MapBuilder = {}
 MapBuilder.Plots = {}
 
 local PLOT_SIZE = 56
-local PLOT_SPACING = 66
+local PLOT_SPACING = 90 -- 34 шага между базами
 local ROAD_WIDTH = 24
 local WALL_H = 4 -- низкие бортики: база открытая, видно дорогу
 local LOCK_H = 30 -- высота силового поля, когда база закрыта
@@ -160,10 +160,11 @@ function MapBuilder:_ground()
 	end
 	-- Тротуар между дорогой и базами
 	for _, side in { -1, 1 } do
-		part({ Name = "Walkway", Size = Vector3.new(roadLen, 0.3, 8), Position = Vector3.new(0, 0.15, side * (ROAD_WIDTH / 2 + 5)), Color = Color3.fromRGB(175, 165, 200), Material = Enum.Material.Pavement })
+		part({ Name = "Walkway", Size = Vector3.new(roadLen, 0.3, 22), Position = Vector3.new(0, 0.15, side * (ROAD_WIDTH / 2 + 11.5)), Color = Color3.fromRGB(175, 165, 200), Material = Enum.Material.Pavement })
 	end
 	self.RoadStart = Vector3.new(-roadLen / 2 + 6, 0.4, 0)
 	self.RoadEnd = Vector3.new(roadLen / 2 - 6, 0.4, 0)
+	self.Roads = { Main = { Start = self.RoadStart, End = self.RoadEnd } }
 
 	-- Порталы-кольца на концах дороги
 	for i, x in { self.RoadStart.X - 2, self.RoadEnd.X + 2 } do
@@ -316,7 +317,7 @@ function MapBuilder:_trees()
 	local placed = 0
 	while placed < 110 do
 		local pos = Vector3.new(rng:NextNumber(-420, 420), 0, rng:NextNumber(-420, 420))
-		local inPlay = math.abs(pos.X) < 205 and math.abs(pos.Z) < 105
+		local inPlay = (math.abs(pos.X) < 245 and math.abs(pos.Z) < 115) or (math.abs(pos.X) < 300 and math.abs(pos.Z) > 255) or (pos.X > 200 and math.abs(pos.Z) < 60)
 		if not inPlay then
 			placed += 1
 			local h = rng:NextNumber(9, 18)
@@ -392,14 +393,14 @@ function MapBuilder:_halloween()
 	end
 	local rng = Random.new(31)
 	-- тыквы вдоль дороги и у баз
-	for x = -150, 150, 22 do
+	for x = -195, 195, 26 do
 		for _, side in { -1, 1 } do
 			pumpkin(Vector3.new(x + rng:NextNumber(-3, 3), 0.3, side * 17.5), rng:NextNumber(2, 3.2), rng)
 		end
 	end
 	for _ = 1, 40 do
 		local pos = Vector3.new(rng:NextNumber(-260, 260), 0, rng:NextNumber(-200, 200))
-		if not (math.abs(pos.X) < 175 and math.abs(pos.Z) < 95) then
+		if not (math.abs(pos.X) < 240 and math.abs(pos.Z) < 110) then
 			pumpkin(pos, rng:NextNumber(3, 7), rng)
 		end
 	end
@@ -418,13 +419,108 @@ function MapBuilder:_halloween()
 	label(sign, "🎃 HALLOWEEN EVENT 🎃", UDim2.fromScale(30, 5), Vector3.zero, Color3.fromRGB(255, 150, 40))
 end
 
+-- 🌍 Острова-зоны со своими дорогами
+function MapBuilder:_zones()
+	self.ZonePads = {}
+	for zi, zone in Config.Zones do
+		local zc = zone.Z
+		local len = 420
+		local isLava = zone.Id == "Lava"
+		part({ Name = "ZoneFloor", Size = Vector3.new(len + 40, 3, 120), Position = Vector3.new(0, 1.5, zc), Color = zone.Floor, Material = if isLava then Enum.Material.Basalt else Enum.Material.Glacier })
+		part({ Name = "ZoneRoad", Size = Vector3.new(len, 0.4, ROAD_WIDTH), Position = Vector3.new(0, 3.2, zc), Color = zone.Road })
+		for _, side in { -1, 1 } do
+			part({ Name = "ZoneRail", Size = Vector3.new(len, 0.4, 0.6), Position = Vector3.new(0, 3.5, zc + side * (ROAD_WIDTH / 2 + 0.5)), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false })
+		end
+		for x = -len / 2 + 10, len / 2 - 10, 14 do
+			part({ Name = "Arrow", Size = Vector3.new(4, 0.1, 1), CFrame = CFrame.new(x, 3.45, zc) * CFrame.Angles(0, math.rad(35), 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.4 })
+			part({ Name = "Arrow", Size = Vector3.new(4, 0.1, 1), CFrame = CFrame.new(x, 3.45, zc) * CFrame.Angles(0, math.rad(-35), 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.4 })
+		end
+		local rng = Random.new(100 + zi)
+		for _ = 1, 36 do
+			local x = rng:NextNumber(-len / 2, len / 2)
+			local z = zc + (if rng:NextNumber() < 0.5 then -1 else 1) * rng:NextNumber(20, 55)
+			if isLava then
+				-- лавовые лужи и тёмные скалы
+				if rng:NextNumber() < 0.5 then
+					local r = rng:NextNumber(8, 16)
+					local pool = part({ Name = "Lava", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, r, r), CFrame = CFrame.new(x, 3.1, z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 90, 10), Material = Enum.Material.Neon, CanCollide = false })
+					local l = Instance.new("PointLight")
+					l.Color = Color3.fromRGB(255, 110, 30)
+					l.Range = r * 1.5
+					l.Brightness = 2
+					l.Parent = pool
+				else
+					local h = rng:NextNumber(6, 18)
+					part({ Name = "Rock", Size = Vector3.new(rng:NextNumber(4, 8), h, rng:NextNumber(4, 8)), CFrame = CFrame.new(x, 3 + h / 2, z) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 3), rng:NextNumber(-0.2, 0.2)), Color = Color3.fromRGB(45, 30, 30), Material = Enum.Material.Basalt })
+				end
+			else
+				-- светящиеся кристаллы
+				local h = rng:NextNumber(8, 24)
+				local c = part({ Name = "Crystal", Size = Vector3.new(rng:NextNumber(2.5, 5), h, rng:NextNumber(2.5, 5)), CFrame = CFrame.new(x, 3 + h / 2 - 1, z) * CFrame.Angles(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 3), rng:NextNumber(-0.35, 0.35)), Color = if rng:NextNumber() < 0.5 then Color3.fromRGB(120, 220, 255) else Color3.fromRGB(190, 120, 255), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false })
+				if rng:NextNumber() < 0.3 then
+					local l = Instance.new("PointLight")
+					l.Color = c.Color
+					l.Range = 18
+					l.Parent = c
+				end
+			end
+		end
+		local start = Vector3.new(-len / 2 + 6, 3.4, zc)
+		self.Roads[zone.Id] = { Start = start, End = Vector3.new(len / 2 - 6, 3.4, zc), Zone = zone }
+		local title = part({ Name = "ZoneTitle", Size = Vector3.new(1, 1, 1), Position = start + Vector3.new(0, 24, 0), Transparency = 1, CanCollide = false })
+		label(title, zone.Name, UDim2.fromScale(34, 6), Vector3.zero, zone.Accent)
+		-- возврат на базу
+		local back = part({ Name = "ReturnPad", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 9, 9), CFrame = CFrame.new(start + Vector3.new(8, -0.1, 24)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 255, 160), Material = Enum.Material.Neon })
+		label(back, "🏠 BACK TO BASE", UDim2.fromScale(12, 3), Vector3.new(0, 5, 0), Color3.fromRGB(140, 255, 170))
+		-- портал в лобби у начала главной дороги
+		local side = if zi == 1 then -1 else 1
+		local padPos = Vector3.new(self.RoadStart.X + 14, 0.5, side * 26)
+		local pad = part({ Name = "ZonePad", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 10, 10), CFrame = CFrame.new(padPos) * CFrame.Angles(0, 0, math.rad(90)), Color = zone.Accent, Material = Enum.Material.Neon })
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			part({ Name = "PadRing", Size = Vector3.new(1.4, 1.4, 1.4), Position = padPos + Vector3.new(math.cos(a) * 6.5, 6 + math.sin(a) * 6.5, 0), Color = zone.Accent, Material = Enum.Material.Neon, CanCollide = false })
+		end
+		label(pad, zone.Name .. "\n🔒 Rebirth " .. zone.Rebirth, UDim2.fromScale(14, 5), Vector3.new(0, 15, 0), zone.Accent)
+		table.insert(self.ZonePads, { Zone = zone, Pad = pad, Return = back, Arrive = CFrame.new(start + Vector3.new(14, 3, 18)) })
+	end
+end
+
+-- 🗼 Sky Obby: спиральная паркур-башня с сундуком наверху
+function MapBuilder:_obby()
+	local cfg = Config.Obby
+	local center = Vector3.new(self.RoadEnd.X + 75, 0, 0)
+	part({ Name = "ObbyPillar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(cfg.Stages * 4.6 + 8, 8, 8), CFrame = CFrame.new(center + Vector3.new(0, (cfg.Stages * 4.6 + 8) / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(250, 245, 255), Material = Enum.Material.Marble })
+	local colors = { Color3.fromRGB(255, 90, 160), Color3.fromRGB(90, 200, 255), Color3.fromRGB(255, 210, 60), Color3.fromRGB(120, 255, 140), Color3.fromRGB(180, 120, 255) }
+	local last
+	for i = 1, cfg.Stages do
+		local a = i * math.rad(32)
+		local r = 15
+		local y = i * 4.6
+		local size = if i < 10 then 7 elseif i < 19 then 5.5 else 4.2
+		local pos = center + Vector3.new(math.cos(a) * r, y, math.sin(a) * r)
+		last = part({ Name = "ObbyStep", Size = Vector3.new(size, 1, size), CFrame = CFrame.new(pos) * CFrame.Angles(0, -a, 0), Color = colors[(i % #colors) + 1], Material = Enum.Material.Neon })
+	end
+	local top = last.Position + Vector3.new(0, 4, 0)
+	local plat = part({ Name = "ObbyTop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 22, 22), CFrame = CFrame.new(center + Vector3.new(0, top.Y - 2.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 220, 90), Material = Enum.Material.Foil })
+	local chest = part({ Name = "ObbyChest", Size = Vector3.new(5, 3.5, 3.5), Position = plat.Position + Vector3.new(0, 2.4, 0), Color = Color3.fromRGB(150, 90, 40), Material = Enum.Material.Wood })
+	part({ Name = "ChestLid", Size = Vector3.new(5.2, 1, 3.7), Position = chest.Position + Vector3.new(0, 2.2, 0), Color = Color3.fromRGB(255, 200, 40), Material = Enum.Material.Foil })
+	local l = Instance.new("PointLight")
+	l.Color = Color3.fromRGB(255, 220, 90)
+	l.Range = 20
+	l.Brightness = 2
+	l.Parent = chest
+	local sign = part({ Name = "ObbySign", Size = Vector3.new(1, 1, 1), Position = center + Vector3.new(0, 14, 0), Transparency = 1, CanCollide = false })
+	label(sign, "🗼 SKY OBBY\n🎁 Chest at the top!", UDim2.fromScale(16, 6), Vector3.zero, Color3.fromRGB(255, 230, 120))
+	self.ObbyChest = chest
+end
+
 function MapBuilder:Init()
 	mapFolder = Instance.new("Folder")
 	mapFolder.Name = "Map"
 	mapFolder.Parent = Workspace
 	self:_lighting()
 	self:_ground()
-	local depth = ROAD_WIDTH / 2 + 10 + PLOT_SIZE / 2
+	local depth = ROAD_WIDTH / 2 + 22 + PLOT_SIZE / 2
 	local idx = 0
 	for _, side in { 1, -1 } do
 		for i = 1, 4 do
@@ -435,6 +531,8 @@ function MapBuilder:Init()
 	end
 	self:_trees()
 	self:_board()
+	self:_zones()
+	self:_obby()
 	local season = Config.Season
 	local now = os.time()
 	if season and season.Name == "Halloween" and now >= season.Start and now < season.End then
